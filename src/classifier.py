@@ -131,6 +131,30 @@ def _first_sentence(text: str) -> str:
     return text
 
 
+def _extract_reasoning_signals(reasoning: str) -> list[str]:
+    lines = []
+    for raw_line in reasoning.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+        if line.startswith("- "):
+            line = line[2:].strip()
+        if line and line[-1] not in ".!?":
+            line += "."
+        lines.append(line)
+
+    if lines:
+        return lines
+
+    parts = [part.strip() for part in reasoning.split(". ") if part.strip()]
+    cleaned_parts = []
+    for part in parts:
+        if part and part[-1] not in ".!?":
+            part += "."
+        cleaned_parts.append(part)
+    return cleaned_parts
+
+
 def _build_summary_object(
     clean: dict, encoded: dict, pathway: str, reasoning: str, first_name: str = "there"
 ) -> dict:
@@ -184,9 +208,9 @@ def _build_summary_object(
         )
 
     # --- Intro: 'Hi [name],' on its own line, pathway context + 1-2 reasoning signals ---
-    reasoning_parts = [s.strip() for s in reasoning.split(". ") if s.strip()]
-    signal_parts = [s for s in reasoning_parts[1:] if not s.lower().startswith("predicted")][:2]
-    signal_text = ". ".join(signal_parts).strip()
+    reasoning_parts = _extract_reasoning_signals(reasoning)
+    signal_parts = reasoning_parts[1:3] if len(reasoning_parts) > 1 else reasoning_parts[:2]
+    signal_text = " ".join(signal_parts).strip()
     if signal_text and not signal_text.endswith("."):
         signal_text += "."
 
@@ -257,39 +281,76 @@ def _build_reasoning(encoded: dict, pathway: str) -> str:
 
     critical_blockers = []
     if encoded.get("q1", 0) == 1:
-        critical_blockers.append("undefined primary offer (Q1=A)")
+        critical_blockers.append("offer clarity is still being defined")
     if encoded.get("q4", 0) <= 2:
-        critical_blockers.append("no structured CRM (Q4=A/B)")
+        critical_blockers.append("CRM structure is still too light to give you a reliable picture of the pipeline")
     if encoded.get("q5", 0) <= 2:
-        critical_blockers.append("no follow-up automation (Q5=A/B)")
+        critical_blockers.append("follow-up still depends too heavily on manual effort")
 
-    parts = [f"Predicted {pathway} from response pattern similarity."]
+    priority_qs = list(PATHWAY_PRIORITY_SECTIONS[pathway])
+    weakest_qs = [q for q in priority_qs if encoded[q] <= 2]
+    strongest_qs = [q for q in priority_qs if encoded[q] >= 3]
+
+    opening_signal = {
+        "Foundation": (
+            "Several of your answers point to core systems that are still being built, which is why the business likely feels heavier to run than it should."
+        ),
+        "Growth": (
+            "Your answers show that the fundamentals are in place, but several key systems are only partially running, which creates drag as volume increases."
+        ),
+        "Optimization": (
+            "Your answers reflect a business with real operational maturity, so the next gains come from tightening performance rather than rebuilding basics."
+        ),
+    }[pathway]
+
+    signals = [opening_signal]
+
+    if strongest_qs and pathway in {"Growth", "Optimization"}:
+        signals.append(_first_sentence(ANSWER_EXPLANATIONS[strongest_qs[0]][encoded[strongest_qs[0]]]))
+
+    weakest_limit = 3 if pathway == "Foundation" else 2
+    for q in weakest_qs[:weakest_limit]:
+        signals.append(_first_sentence(ANSWER_EXPLANATIONS[q][encoded[q]]))
 
     if pathway == "Foundation":
-        parts.append(
-            f"{foundation_signals} Foundation-level signal(s) detected across the 12 domains."
+        signals.append(
+            f"Right now, {foundation_signals} of the 12 business domains are still showing foundation-stage patterns, so a few simple systems will create an outsized lift."
         )
+    elif pathway == "Growth":
         if critical_blockers:
-            parts.append(
-                "Critical Foundation blockers present: " + "; ".join(critical_blockers) + "."
+            blocker_text = "; ".join(critical_blockers)
+            signals.append(
+                f"Right now, full optimization is being held back because {blocker_text}, even though the underlying business has real momentum."
             )
-    elif pathway == "Optimization":
-        parts.append(
-            f"{optimization_signals} Optimization-level (D) responses detected. "
-            "No critical Foundation blockers. Strong CRM and reporting maturity confirmed."
-        )
-    else:  # Growth
-        parts.append(
-            f"{foundation_signals} Foundation signal(s) detected (threshold for Foundation is 3). "
-            f"{optimization_signals} Optimization-level response(s) detected "
-            "(threshold for Optimization is 4 with no blockers)."
-        )
-        if critical_blockers:
-            parts.append(
-                "Optimization blocked by: " + "; ".join(critical_blockers) + "."
+        elif optimization_signals:
+            signals.append(
+                f"You already have {optimization_signals} area(s) performing at an optimization level, which is a strong sign that the next step is consistency rather than reinvention."
+            )
+    else:  # Optimization
+        next_lever_qs = [q for q in priority_qs if encoded[q] < 4]
+        if next_lever_qs:
+            next_lever_names = " and ".join(SECTION_NAMES[q] for q in next_lever_qs[:2])
+            signals.append(
+                f"The clearest next-level opportunity now sits in {next_lever_names}, where stronger automation or tighter execution would unlock more leverage from what is already working."
+            )
+        else:
+            signals.append(
+                "Across the board, your systems are already strong, so the work now is about refinement, speed, and higher-leverage automation."
             )
 
-    return " ".join(parts)
+    deduped_signals = []
+    seen = set()
+    for signal in signals:
+        cleaned = " ".join(signal.split()).strip()
+        if not cleaned:
+            continue
+        key = cleaned.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped_signals.append(cleaned)
+
+    return "\n".join(f"- {signal}" for signal in deduped_signals[:5])
 
 
 # ---------------------------------------------------------------------------
