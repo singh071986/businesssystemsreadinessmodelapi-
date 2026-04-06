@@ -111,7 +111,7 @@ def predict(payload: AssessmentInput):
     Predict pathway for a single assessment payload.
     """
     try:
-        result = classify(payload.responses)
+        result = classify(payload.responses, first_name=payload.first_name or "there")
         return ClassificationOutput(**result)
     except FileNotFoundError as exc:
         error = ApiError(

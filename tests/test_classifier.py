@@ -238,12 +238,13 @@ def demo_full_output():
     }
     result = classify(sample)
 
-    # Print everything except the full summary (too long for terminal)
+    # Print everything except the large summary object (too long for terminal)
     printable = {k: v for k, v in result.items() if k != "summary"}
     print(json.dumps(printable, indent=2))
 
-    print(f"\n  [summary] ({len(result['summary'].split())} words — truncated below)")
-    print("  " + result["summary"][:400] + " ...")
+    full_report = result["summary"]["full_report_text"]
+    print(f"\n  [summary.full_report_text] ({len(full_report.split())} words — truncated below)")
+    print("  " + full_report[:400] + " ...")
 
 
 if __name__ == "__main__":

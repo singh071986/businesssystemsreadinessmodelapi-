@@ -31,9 +31,10 @@ from src.data_utils import (
     PATHWAY_ANTI_PRIORITY,
     PATHWAY_GRADUATION_OUTLOOK,
     PATHWAY_PRIORITY_ACTIONS,
+    PATHWAY_PRIORITY_SECTIONS,
     QUESTIONS,
+    SECTION_FOCUS_DESCRIPTIONS,
     SECTION_NAMES,
-    SECTION_QUESTIONS,
     rule_based_classify,
 )
 from src.schema import AssessmentInput, ClassificationOutput
@@ -121,6 +122,127 @@ def _build_summary(encoded: dict) -> str:
     return summary[:TOTAL_CHAR_LIMIT]
 
 
+def _first_sentence(text: str) -> str:
+    text = " ".join(text.split()).strip()
+    for delimiter in (". ", "? ", "! "):
+        if delimiter in text:
+            return text.split(delimiter, 1)[0].strip() + text[text.find(delimiter): text.find(delimiter) + 1]
+    return text
+
+
+def _build_summary_object(
+    clean: dict, encoded: dict, pathway: str, reasoning: str, first_name: str = "there"
+) -> dict:
+    priority_qs = list(PATHWAY_PRIORITY_SECTIONS[pathway])
+
+    # For Optimization, also include any D-answer sections not already in the priority list
+    if pathway == "Optimization":
+        d_extras = [q for q in QUESTIONS if encoded[q] == 4 and q not in priority_qs]
+        all_relevant_qs = priority_qs + d_extras[:3]
+    else:
+        all_relevant_qs = priority_qs
+
+    # Split into gaps (≤2) and strengths (≥3) within the pathway-relevant sections
+    gap_qs = [q for q in all_relevant_qs if encoded[q] <= 2]
+    strength_qs = [q for q in all_relevant_qs if encoded[q] >= 3]
+
+    # --- Paragraph 1: friction/gaps grounded in the actual section blurbs ---
+    if gap_qs:
+        gap_names = ", ".join(SECTION_NAMES[q] for q in gap_qs[:3])
+        gap_blurb_sentences = [
+            _first_sentence(ANSWER_EXPLANATIONS[q][encoded[q]]) for q in gap_qs[:2]
+        ]
+        narrative_paragraph_1 = (
+            f"The clearest friction right now sits in {gap_names}. "
+            + " ".join(gap_blurb_sentences)
+        )
+    else:
+        fallback_blurb = _first_sentence(
+            ANSWER_EXPLANATIONS[all_relevant_qs[0]][encoded[all_relevant_qs[0]]]
+        )
+        narrative_paragraph_1 = (
+            "Your priority systems are already performing well. "
+            + fallback_blurb
+            + " The opportunity now is tightening consistency across the remaining areas."
+        )
+
+    # --- Paragraph 2: shift toward what becomes possible ---
+    if strength_qs:
+        strength_names = " and ".join(SECTION_NAMES[q] for q in strength_qs[:2])
+        strength_blurb = _first_sentence(ANSWER_EXPLANATIONS[strength_qs[0]][encoded[strength_qs[0]]])
+        narrative_paragraph_2 = (
+            f"Where your systems are already solid — particularly in {strength_names} — that foundation is working for you. "
+            + strength_blurb
+            + " As the remaining gaps close, the business becomes easier to run and more reliable to grow."
+        )
+    else:
+        narrative_paragraph_2 = (
+            "Once the systems in your priority areas are installed and running consistently, "
+            "the business becomes more predictable, easier to manage, and ready to grow without "
+            "depending entirely on your personal effort."
+        )
+
+    # --- Intro: 'Hi [name],' on its own line, pathway context + 1-2 reasoning signals ---
+    reasoning_parts = [s.strip() for s in reasoning.split(". ") if s.strip()]
+    signal_parts = [s for s in reasoning_parts[1:] if not s.lower().startswith("predicted")][:2]
+    signal_text = ". ".join(signal_parts).strip()
+    if signal_text and not signal_text.endswith("."):
+        signal_text += "."
+
+    pathway_context = {
+        "Foundation": (
+            "your results show you're in the business-building stage — working with real momentum "
+            "and real gaps at the same time"
+        ),
+        "Growth": (
+            "your foundation is largely in place, which means the work ahead is about making your "
+            "systems more consistent and connected"
+        ),
+        "Optimization": (
+            "your core systems are working well, which means the focus now shifts to deepening and "
+            "automating what you've already built"
+        ),
+    }
+
+    intro = (
+        f"Hi {first_name},\n"
+        f"Based on your answers, {pathway_context[pathway]}. "
+        + (f"{signal_text} " if signal_text else "")
+        + "Here's what your results show."
+    )
+
+    # --- Recommended focus areas: Section Name + one-line description ---
+    focus_areas = [SECTION_FOCUS_DESCRIPTIONS[q] for q in priority_qs[:5]]
+
+    # --- Support fields ---
+    strongest_q = max(QUESTIONS, key=lambda q: (encoded[q], q))
+    weakest_q = min(QUESTIONS, key=lambda q: (encoded[q], q))
+    immediate_focus = SECTION_FOCUS_DESCRIPTIONS[priority_qs[0]].split(":")[0].strip()
+    graduation_outlook = PATHWAY_GRADUATION_OUTLOOK[pathway]
+
+    focus_lines = "\n".join(f"- {item}" for item in focus_areas)
+    full_report_text = (
+        f"{intro}\n\n"
+        f"{narrative_paragraph_1}\n\n"
+        f"{narrative_paragraph_2}\n\n"
+        f"Your recommended focus areas:\n{focus_lines}\n\n"
+        f"{graduation_outlook}"
+    )
+
+    return {
+        "source": "deterministic_fallback",
+        "intro": intro,
+        "narrative_paragraph_1": narrative_paragraph_1,
+        "narrative_paragraph_2": narrative_paragraph_2,
+        "recommended_focus_areas": focus_areas,
+        "strongest_area": SECTION_NAMES[strongest_q],
+        "weakest_area": SECTION_NAMES[weakest_q],
+        "immediate_focus": immediate_focus,
+        "graduation_outlook": graduation_outlook,
+        "full_report_text": full_report_text,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Reasoning builder
 # ---------------------------------------------------------------------------
@@ -173,7 +295,7 @@ def _build_reasoning(encoded: dict, pathway: str) -> str:
 # Main classification function
 # ---------------------------------------------------------------------------
 
-def classify(responses: Union[dict, str]) -> dict:
+def classify(responses: Union[dict, str], first_name: str = "there") -> dict:
     """
     Classify a 12-question business systems assessment.
 
@@ -240,10 +362,9 @@ def classify(responses: Union[dict, str]) -> dict:
 
     # Build outputs
     reasoning = _build_reasoning(encoded, pathway)
-    summary = _build_summary(encoded)
+    summary = _build_summary_object(clean, encoded, pathway, reasoning, first_name=first_name)
     priority_actions = PATHWAY_PRIORITY_ACTIONS[pathway]
     anti_priority_warnings = PATHWAY_ANTI_PRIORITY[pathway]
-    graduation_outlook = PATHWAY_GRADUATION_OUTLOOK[pathway]
 
     output = ClassificationOutput(
         input_responses=clean,
@@ -255,7 +376,6 @@ def classify(responses: Union[dict, str]) -> dict:
         summary=summary,
         priority_actions=priority_actions,
         anti_priority_warnings=anti_priority_warnings,
-        graduation_outlook=graduation_outlook,
     )
 
     return output.model_dump()

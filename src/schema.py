@@ -6,7 +6,7 @@ Classification Engine.
 """
 
 from typing import Dict, List, Optional
-from pydantic import BaseModel, field_validator, model_validator
+from pydantic import BaseModel, field_validator
 
 
 # ---------------------------------------------------------------------------
@@ -20,8 +20,10 @@ REQUIRED_QUESTIONS = {f"q{i}" for i in range(1, 13)}
 class AssessmentInput(BaseModel):
     """
     Input payload: 12 question responses (Q1–Q12), each answered A, B, C, or D.
+    Optionally include first_name for a personalised summary salutation.
     """
 
+    first_name: Optional[str] = None
     responses: Dict[str, str]
 
     @field_validator("responses")
@@ -83,6 +85,21 @@ class AssessmentInput(BaseModel):
 # Output Schema
 # ---------------------------------------------------------------------------
 
+
+class SummaryObject(BaseModel):
+    """Structured fallback summary that can be rendered by the UI."""
+
+    source: str
+    intro: str
+    narrative_paragraph_1: str
+    narrative_paragraph_2: str
+    recommended_focus_areas: List[str]
+    strongest_area: str
+    weakest_area: str
+    immediate_focus: str
+    graduation_outlook: str
+    full_report_text: str
+
 class ClassificationOutput(BaseModel):
     """
     Full classification result returned by the engine.
@@ -106,20 +123,14 @@ class ClassificationOutput(BaseModel):
     class_probabilities: Dict[str, float]
     """Probabilities for all three classes summing to 1.0."""
 
-    summary: str
-    """
-    Personalised narrative (≤1,000 words) synthesised from every answer's
-    detailed explanation.
-    """
+    summary: SummaryObject
+    """Structured summary contract for deterministic fallback and later LLM replacement."""
 
     priority_actions: List[str]
     """3–5 highest-leverage next steps for this pathway."""
 
     anti_priority_warnings: List[str]
     """2–3 actions to explicitly avoid at this stage."""
-
-    graduation_outlook: str
-    """What becomes possible once the pathway conditions are met."""
 
     model_config = {"json_schema_extra": {
         "example": {
@@ -143,7 +154,21 @@ class ClassificationOutput(BaseModel):
                 "Growth": 0.7823,
                 "Optimization": 0.0932,
             },
-            "summary": "...",
+            "summary": {
+                "source": "deterministic_fallback",
+                "intro": "{{client_name}}, your results place you in the Growth stage right now. The core systems are taking shape, but consistency is still the main constraint.",
+                "narrative_paragraph_1": "Your strongest progress shows up in the areas where structure already exists, but some core workflows still depend on manual effort.",
+                "narrative_paragraph_2": "As those gaps are standardised, the business becomes easier to run, easier to forecast, and easier to grow without extra strain.",
+                "recommended_focus_areas": [
+                    "Standardise your client onboarding and fulfillment into a documented workflow.",
+                    "Connect your payment system to automated confirmation sequences."
+                ],
+                "strongest_area": "Clarity & Offer System",
+                "weakest_area": "Nurture & Follow-Up System",
+                "immediate_focus": "Standardise your client onboarding and fulfillment into a documented workflow.",
+                "graduation_outlook": "Once you have standardised delivery, integrated payments, and consistent metrics review, you'll be ready to move into the Optimization pathway.",
+                "full_report_text": "{{client_name}}, your results place you in the Growth stage right now.\n\nYour strongest progress shows up in the areas where structure already exists, but some core workflows still depend on manual effort.\n\nAs those gaps are standardised, the business becomes easier to run, easier to forecast, and easier to grow without extra strain.\n\nYour recommended focus areas:\n- Standardise your client onboarding and fulfillment into a documented workflow.\n- Connect your payment system to automated confirmation sequences.\n\nOnce you have standardised delivery, integrated payments, and consistent metrics review, you'll be ready to move into the Optimization pathway."
+            },
             "priority_actions": [
                 "Standardise your client onboarding and fulfillment into a documented workflow.",
                 "Connect your payment system to automated confirmation sequences.",
@@ -151,9 +176,5 @@ class ClassificationOutput(BaseModel):
             "anti_priority_warnings": [
                 "Don't invest heavily in AI tools until your CRM is consistently used.",
             ],
-            "graduation_outlook": (
-                "Once you have standardised delivery, integrated payments, and consistent "
-                "metrics review, you'll be ready to move into the Optimization pathway."
-            ),
         }
     }}

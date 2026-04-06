@@ -43,8 +43,11 @@ def run():
     body = r.json()
     assert body["pathway"] in {"Foundation", "Growth", "Optimization"}
     assert "confidence_score" in body
-    assert len(body["summary"]) <= 1000
-    assert len([part for part in body["summary"].split("\n\n") if part.strip()]) == 12
+    assert body["summary"]["source"] == "deterministic_fallback"
+    assert body["summary"]["intro"]
+    assert body["summary"]["narrative_paragraph_1"]
+    assert body["summary"]["narrative_paragraph_2"]
+    assert len(body["summary"]["recommended_focus_areas"]) >= 3
     print("[PASS] POST /predict")
 
     # Invalid request (missing q12)

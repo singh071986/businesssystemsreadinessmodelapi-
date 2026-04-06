@@ -73,9 +73,14 @@ def test_summary_contract():
     _assert(len(requests) > 0, "Clean requests file should not be empty")
 
     result = classify(requests[0])
-    paragraph_count = len([part for part in result["summary"].split("\n\n") if part.strip()])
-    _assert(paragraph_count == 12, f"Expected 12 summary paragraphs, found {paragraph_count}")
-    _assert(len(result["summary"]) <= 1000, "Summary exceeds 1,000 characters")
+    _assert(result["summary"].get("intro"), "Missing summary intro")
+    _assert(result["summary"].get("narrative_paragraph_1"), "Missing summary narrative paragraph 1")
+    _assert(result["summary"].get("narrative_paragraph_2"), "Missing summary narrative paragraph 2")
+    _assert(
+        len(result["summary"].get("recommended_focus_areas", [])) >= 3,
+        "Expected at least 3 recommended focus areas",
+    )
+    _assert(result["summary"]["source"] == "deterministic_fallback", "Missing structured fallback summary")
 
 
 def main():

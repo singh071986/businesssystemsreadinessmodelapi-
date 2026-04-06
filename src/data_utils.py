@@ -621,6 +621,32 @@ PATHWAY_GRADUATION_OUTLOOK = {
     ),
 }
 
+# ---------------------------------------------------------------------------
+# Section focus area descriptions for structured summary bullets
+# Format: "System Name: one-line plain-language description (under 20 words total)"
+# ---------------------------------------------------------------------------
+SECTION_FOCUS_DESCRIPTIONS = {
+    "q1": "Clarity & Offer System: one clear primary offer with a defined call to action.",
+    "q2": "Presence System: a website that guides the right visitor to take the next step.",
+    "q3": "Lead Capture System: an automated process so every inquiry receives an immediate response.",
+    "q4": "Customer Journey / CRM System: a single place to track every lead and client consistently.",
+    "q5": "Nurture & Follow-Up System: automated sequences so every lead stays warm without manual effort.",
+    "q6": "Delivery System: a repeatable onboarding workflow so every client starts the same way.",
+    "q7": "Payments & Offers System: checkout connected to workflows so payment triggers the next step.",
+    "q8": "Reactivation & Outreach System: structured campaigns that re-engage your existing database.",
+    "q9": "Reputation & Reviews System: a consistent process that generates client reviews automatically.",
+    "q10": "AI Engagement & Conversion System: AI tools integrated into your qualification and follow-up.",
+    "q11": "Reporting & Improvement System: regular metrics review so you know what is actually working.",
+    "q12": "Lifetime Value & Retention System: planned offers and reminders that keep clients returning.",
+}
+
+# Priority sections per pathway, aligned with the narrative assembly prompt
+PATHWAY_PRIORITY_SECTIONS = {
+    "Foundation": ["q1", "q2", "q3", "q4", "q5", "q6"],
+    "Growth": ["q3", "q4", "q5", "q6", "q7", "q8"],
+    "Optimization": ["q8", "q9", "q10", "q11", "q12"],
+}
+
 
 # ---------------------------------------------------------------------------
 # Deterministic rule-based classifier (used for training data generation
