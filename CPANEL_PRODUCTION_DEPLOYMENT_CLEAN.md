@@ -9,7 +9,7 @@ This guide assumes no cPanel terminal access and uses only cPanel UI.
 
 ## A) Values you must use everywhere
 
-1. Domain: api.businessystem.com
+1. Domain: testapi.businessystem.com
 2. App root in Setup Python App: business_api
 3. Full folder path: /home/twmpathway/business_api
 4. Startup file: passenger_wsgi.py
@@ -25,13 +25,13 @@ Use this if you already tried many times and want a clean start.
 1. In Setup Python App:
 2. Stop the existing app.
 3. Delete the existing app entry.
-4. In Domains, delete api.businessystem.com entry.
+4. In Domains, delete testapi.businessystem.com entry.
 5. In File Manager, open /home/twmpathway/business_api.
 6. Delete old project files from that folder.
 7. Keep only system folders if present, such as .well-known and cgi-bin.
 8. Delete old zip files, __MACOSX, and .DS_Store.
 9. Recreate domain in Domains:
-10. Domain: api.businessystem.com
+10. Domain: testapi.businessystem.com
 11. Share document root: unchecked
 12. Document root: business_api
 13. Save.
@@ -59,7 +59,7 @@ Use this if domain already exists and points to /home/twmpathway/business_api.
 1. Open Setup Python App and click Create Application.
 2. Python version: 3.11
 3. Application root: business_api
-4. Application URL: api.businessystem.com
+4. Application URL: testapi.businessystem.com
 5. Startup file: passenger_wsgi.py
 6. Entry point: application
 7. Save.
@@ -142,19 +142,19 @@ logging.basicConfig(
 
 ## J) DNS and SSL checks
 
-1. Ensure DNS A record for api.businessystem.com points to your cPanel server IP.
-2. In cPanel SSL/TLS Status, run AutoSSL for api.businessystem.com.
+1. Ensure DNS A record for testapi.businessystem.com points to your cPanel server IP.
+2. In cPanel SSL/TLS Status, run AutoSSL for testapi.businessystem.com.
 3. If local dig fails with timeout, test with public resolver from local machine:
-4. dig +short api.businessystem.com @1.1.1.1
-5. dig +short api.businessystem.com @8.8.8.8
+4. dig +short testapi.businessystem.com @1.1.1.1
+5. dig +short testapi.businessystem.com @8.8.8.8
 
 ## K) Test endpoints
 
 1. Open in browser:
-2. https://api.businessystem.com/health
+2. https://testapi.businessystem.com/health
 3. Run predict test from local machine:
 
-curl -i -X POST https://api.businessystem.com/predict -H "Content-Type: application/json" -d '{"responses":{"q1":"C","q2":"B","q3":"C","q4":"C","q5":"B","q6":"C","q7":"C","q8":"B","q9":"C","q10":"A","q11":"C","q12":"B"}}'
+curl -i -X POST https://testapi.businessystem.com/predict -H "Content-Type: application/json" -d '{"responses":{"q1":"C","q2":"B","q3":"C","q4":"C","q5":"B","q6":"C","q7":"C","q8":"B","q9":"C","q10":"A","q11":"C","q12":"B"}}'
 
 ## L) Quick failure guide
 
@@ -162,12 +162,12 @@ curl -i -X POST https://api.businessystem.com/predict -H "Content-Type: applicat
 2. DNS points to wrong server. Fix A record.
 3. 405 empty body and no app logs:
 4. Request not reaching FastAPI. Recheck domain mapping and host routing.
-5. Application URL becomes api.businessystem.com.pathway.thewebsitemembership.com:
+5. Application URL becomes testapi.businessystem.com.pathway.thewebsitemembership.com:
 6. Domain created incorrectly. Delete and recreate exact domain.
 
 ## M) Final checklist
 
-1. Domain exists as api.businessystem.com
+1. Domain exists as testapi.businessystem.com
 2. Document root is business_api
 3. App root is business_api
 4. Startup file is passenger_wsgi.py
@@ -177,3 +177,37 @@ curl -i -X POST https://api.businessystem.com/predict -H "Content-Type: applicat
 8. App restarted
 9. Health endpoint returns API response
 10. Predict endpoint returns JSON
+
+## N) Pre-deploy sanity commands (run locally before zip upload)
+
+Run these from project root:
+
+1. Validate tests:
+2. python tests/test_api.py
+3. python tests/prod_smoke_test.py
+4. python tests/test_validation.py
+5. Verify model exists:
+6. ls -lh models/pathway_classifier.pkl
+7. Verify dependency lock file:
+8. cat requirements.txt
+9. Create deploy zip (exclude local junk):
+10. zip -r business_api_deploy.zip . -x "*.git*" "*.DS_Store" "__pycache__/*" "*.pytest_cache*" "*.mypy_cache*" "logs/*" "*.log" ".env*"
+
+Expected outcome:
+
+1. All tests pass
+2. Model file present
+3. Zip contains passenger_wsgi.py, requirements.txt, src/, models/, data/
+
+## O) Runtime environment checklist (production-safe defaults)
+
+Set these in cPanel Python App environment variables (or equivalent host env):
+
+1. CORS_ALLOW_ORIGINS=https://your-ui-domain.com
+2. API_EXPOSE_ERROR_DETAILS=false
+
+Notes:
+
+1. Do not use CORS_ALLOW_ORIGINS=* in production unless required.
+2. API_EXPOSE_ERROR_DETAILS=false prevents internal exception leakage in API responses.
+3. If debugging a server issue temporarily, set API_EXPOSE_ERROR_DETAILS=true, test, then set back to false.

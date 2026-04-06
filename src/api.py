@@ -41,16 +41,27 @@ app = FastAPI(
     ),
 )
 
+
+def _is_truthy(value: str) -> bool:
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _expose_error_details() -> bool:
+    # Keep internal exception strings hidden by default in production responses.
+    return _is_truthy(os.getenv("API_EXPOSE_ERROR_DETAILS", "false"))
+
+
 # UI integration support: configure allowed origins via environment variable.
 # Example:
 #   export CORS_ALLOW_ORIGINS="https://ui.example.com,http://localhost:3000"
 origins_raw = os.getenv("CORS_ALLOW_ORIGINS", "*").strip()
 allow_origins = ["*"] if origins_raw == "*" else [o.strip() for o in origins_raw.split(",") if o.strip()]
+allow_credentials = False if allow_origins == ["*"] else True
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allow_origins,
-    allow_credentials=True,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -117,7 +128,7 @@ def predict(payload: AssessmentInput):
         error = ApiError(
             code="MODEL_NOT_FOUND",
             message="Saved model file not found. Train model before inference.",
-            details=str(exc),
+            details=str(exc) if _expose_error_details() else None,
         )
         raise HTTPException(status_code=500, detail=error.model_dump()) from exc
     except ValueError as exc:
@@ -131,6 +142,6 @@ def predict(payload: AssessmentInput):
         error = ApiError(
             code="INTERNAL_ERROR",
             message="Unexpected server error during prediction.",
-            details=str(exc),
+            details=str(exc) if _expose_error_details() else None,
         )
         raise HTTPException(status_code=500, detail=error.model_dump()) from exc
