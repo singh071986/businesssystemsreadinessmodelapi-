@@ -1,0 +1,179 @@
+# cPanel Production Deployment (Clear Step-by-Step)
+
+Use this file as the only runbook. It has two flows:
+
+1. Full reset and fresh deploy
+2. Fresh deploy only
+
+This guide assumes no cPanel terminal access and uses only cPanel UI.
+
+## A) Values you must use everywhere
+
+1. Domain: api.businessystem.com
+2. App root in Setup Python App: business_api
+3. Full folder path: /home/twmpathway/business_api
+4. Startup file: passenger_wsgi.py
+5. Entry point: application
+6. Python version: 3.11
+
+Do not change these values between screens.
+
+## B) Full reset and fresh deploy
+
+Use this if you already tried many times and want a clean start.
+
+1. In Setup Python App:
+2. Stop the existing app.
+3. Delete the existing app entry.
+4. In Domains, delete api.businessystem.com entry.
+5. In File Manager, open /home/twmpathway/business_api.
+6. Delete old project files from that folder.
+7. Keep only system folders if present, such as .well-known and cgi-bin.
+8. Delete old zip files, __MACOSX, and .DS_Store.
+9. Recreate domain in Domains:
+10. Domain: api.businessystem.com
+11. Share document root: unchecked
+12. Document root: business_api
+13. Save.
+
+After this, continue with section C.
+
+## C) Fresh deploy only
+
+Use this if domain already exists and points to /home/twmpathway/business_api.
+
+1. In File Manager, open /home/twmpathway/business_api.
+2. Upload project zip.
+3. Extract zip in this same folder.
+4. If extraction creates nested folder, move contents up into /home/twmpathway/business_api.
+5. Ensure these are directly in /home/twmpathway/business_api:
+6. passenger_wsgi.py
+7. requirements.txt
+8. src folder
+9. models folder
+10. data folder
+11. Delete __MACOSX, .DS_Store, and the uploaded zip.
+
+## D) Create Python app
+
+1. Open Setup Python App and click Create Application.
+2. Python version: 3.11
+3. Application root: business_api
+4. Application URL: api.businessystem.com
+5. Startup file: passenger_wsgi.py
+6. Entry point: application
+7. Save.
+
+## E) Install dependencies
+
+1. In Setup Python App, under Configuration files, add requirements.txt.
+2. Click Run Pip Install.
+3. Wait for success.
+
+Use pinned dependencies in requirements.txt:
+
+1. scikit-learn==1.4.2
+2. numpy==1.26.4
+3. pydantic==2.7.1
+4. joblib==1.3.2
+5. fastapi==0.110.0
+6. uvicorn==0.29.0
+7. a2wsgi==1.10.8
+
+## F) Create or verify startup file
+
+Path: /home/twmpathway/business_api/passenger_wsgi.py
+
+Content:
+
+import os
+import sys
+from a2wsgi import ASGIMiddleware
+
+BASE_DIR = os.path.dirname(__file__)
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+from src.api import app as fastapi_app
+
+application = ASGIMiddleware(fastapi_app)
+
+## G) Ensure model file exists
+
+Required file:
+
+/home/twmpathway/business_api/models/pathway_classifier.pkl
+
+If missing:
+
+1. In Setup Python App, Execute python script.
+2. Script path: src/train_model.py
+3. Click Run Script.
+4. Confirm the pkl file appears in models.
+
+## H) Add logging files
+
+1. In File Manager, create folder /home/twmpathway/business_api/logs
+2. Create files:
+3. /home/twmpathway/business_api/logs/boot.log
+4. /home/twmpathway/business_api/logs/app.log
+
+Optional app logging snippets:
+
+In passenger_wsgi.py add:
+
+from datetime import datetime
+with open("/home/twmpathway/business_api/logs/boot.log", "a") as f:
+    f.write(f"boot hit: {datetime.utcnow().isoformat()}Z\\n")
+
+In src/api.py add:
+
+import logging
+logging.basicConfig(
+    filename="/home/twmpathway/business_api/logs/app.log",
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(message)s",
+)
+
+## I) Restart app
+
+1. Stop App
+2. Start or Restart App
+
+## J) DNS and SSL checks
+
+1. Ensure DNS A record for api.businessystem.com points to your cPanel server IP.
+2. In cPanel SSL/TLS Status, run AutoSSL for api.businessystem.com.
+3. If local dig fails with timeout, test with public resolver from local machine:
+4. dig +short api.businessystem.com @1.1.1.1
+5. dig +short api.businessystem.com @8.8.8.8
+
+## K) Test endpoints
+
+1. Open in browser:
+2. https://api.businessystem.com/health
+3. Run predict test from local machine:
+
+curl -i -X POST https://api.businessystem.com/predict -H "Content-Type: application/json" -d '{"responses":{"q1":"C","q2":"B","q3":"C","q4":"C","q5":"B","q6":"C","q7":"C","q8":"B","q9":"C","q10":"A","q11":"C","q12":"B"}}'
+
+## L) Quick failure guide
+
+1. TLS unrecognized name:
+2. DNS points to wrong server. Fix A record.
+3. 405 empty body and no app logs:
+4. Request not reaching FastAPI. Recheck domain mapping and host routing.
+5. Application URL becomes api.businessystem.com.pathway.thewebsitemembership.com:
+6. Domain created incorrectly. Delete and recreate exact domain.
+
+## M) Final checklist
+
+1. Domain exists as api.businessystem.com
+2. Document root is business_api
+3. App root is business_api
+4. Startup file is passenger_wsgi.py
+5. Entry point is application
+6. Requirements installed successfully
+7. Model file exists
+8. App restarted
+9. Health endpoint returns API response
+10. Predict endpoint returns JSON

@@ -1,0 +1,55 @@
+{
+  "input_responses": {
+    "q1": "C",
+    "q2": "B",
+    "q3": "C",
+    "q4": "C",
+    "q5": "B",
+    "q6": "C",
+    "q7": "C",
+    "q8": "B",
+    "q9": "C",
+    "q10": "A",
+    "q11": "C",
+    "q12": "B"
+  },
+  "input_text": "I have one clear primary offer and CTA. | Basic website with limited conversion structure. | Form/booking with automated confirmations. | Defined customer journey stages with consistent usage. | Templates but no automation. | Structured onboarding workflow. | Integrated checkout with confirmation workflows. | Occasional manual outreach. | Structured review request workflow. | No AI tools in use. | I review dashboards regularly and adjust workflows. | Occasional manual upsell offers.",
+  "pathway": "Growth",
+  "reasoning": "Predicted Growth from response pattern similarity. 2 Foundation signal(s) detected (threshold for Foundation is 3). 0 Optimization-level response(s) detected (threshold for Optimization is 4 with no blockers). Optimization blocked by: no follow-up automation (Q5=A/B).",
+  "confidence_score": 0.94749049,
+  "class_probabilities": {
+    "Foundation": 0.052509,
+    "Growth": 0.94749,
+    "Optimization": 1e-06
+  },
+  "summary": {
+    "source": "deterministic_fallback",
+    "intro": "Hi Sarah,\nBased on your answers, your foundation is largely in place, which means the work ahead is about making your systems more consistent and connected. 2 Foundation signal(s) detected (threshold for Foundation is 3). 0 Optimization-level response(s) detected (threshold for Optimization is 4 with no blockers). Here's what your results show.",
+    "narrative_paragraph_1": "The clearest friction right now sits in Nurture & Follow-Up System, Reactivation & Outreach System. Having templates is a smart move — it saves time and keeps your communication consistent. You're already doing something most business owners don't — you occasionally reach back out to people who've gone quiet or haven't heard from you in a while.",
+    "narrative_paragraph_2": "Where your systems are already solid — particularly in Lead Capture System and Customer Journey / CRM System — that foundation is working for you. Your lead capture system is doing more than just collecting information — it's responding. As the remaining gaps close, the business becomes easier to run and more reliable to grow.",
+    "recommended_focus_areas": [
+      "Lead Capture System: an automated process so every inquiry receives an immediate response.",
+      "Customer Journey / CRM System: a single place to track every lead and client consistently.",
+      "Nurture & Follow-Up System: automated sequences so every lead stays warm without manual effort.",
+      "Delivery System: a repeatable onboarding workflow so every client starts the same way.",
+      "Payments & Offers System: checkout connected to workflows so payment triggers the next step."
+    ],
+    "strongest_area": "Reputation & Reviews System",
+    "weakest_area": "AI Engagement & Conversion System",
+    "immediate_focus": "Lead Capture System",
+    "graduation_outlook": "Once you have standardised delivery, integrated payments, a structured reactivation strategy, and consistent metrics review in place, you'll be ready to move into the Optimization pathway — where your focus shifts to AI-assisted engagement, lifecycle automation, and continuous performance improvement.",
+    "full_report_text": "Hi Sarah,\nBased on your answers, your foundation is largely in place, which means the work ahead is about making your systems more consistent and connected. 2 Foundation signal(s) detected (threshold for Foundation is 3). 0 Optimization-level response(s) detected (threshold for Optimization is 4 with no blockers). Here's what your results show.\n\nThe clearest friction right now sits in Nurture & Follow-Up System, Reactivation & Outreach System. Having templates is a smart move — it saves time and keeps your communication consistent. You're already doing something most business owners don't — you occasionally reach back out to people who've gone quiet or haven't heard from you in a while.\n\nWhere your systems are already solid — particularly in Lead Capture System and Customer Journey / CRM System — that foundation is working for you. Your lead capture system is doing more than just collecting information — it's responding. As the remaining gaps close, the business becomes easier to run and more reliable to grow.\n\nYour recommended focus areas:\n- Lead Capture System: an automated process so every inquiry receives an immediate response.\n- Customer Journey / CRM System: a single place to track every lead and client consistently.\n- Nurture & Follow-Up System: automated sequences so every lead stays warm without manual effort.\n- Delivery System: a repeatable onboarding workflow so every client starts the same way.\n- Payments & Offers System: checkout connected to workflows so payment triggers the next step.\n\nOnce you have standardised delivery, integrated payments, a structured reactivation strategy, and consistent metrics review in place, you'll be ready to move into the Optimization pathway — where your focus shifts to AI-assisted engagement, lifecycle automation, and continuous performance improvement."
+  },
+  "priority_actions": [
+    "Standardise your client onboarding and fulfillment into a documented workflow.",
+    "Connect your payment system to automated confirmation and onboarding sequences.",
+    "Launch a structured reactivation campaign to your existing database.",
+    "Implement a consistent review request process at the close of every client engagement.",
+    "Set up a regular metrics review cadence — weekly or monthly — using a simple dashboard."
+  ],
+  "anti_priority_warnings": [
+    "Don't invest heavily in AI tools until your CRM is being used consistently.",
+    "Don't build complex reactivation automations before your core follow-up sequences are reliable.",
+    "Don't expand to multiple offers until your primary offer's systems are fully operational."
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "input_responses": {
+    "q1": "D",
+    "q2": "D",
+    "q3": "D",
+    "q4": "D",
+    "q5": "D",
+    "q6": "D",
+    "q7": "D",
+    "q8": "D",
+    "q9": "D",
+    "q10": "D",
+    "q11": "D",
+    "q12": "D"
+  },
+  "input_text": "I have one primary offer with defined positioning and proof. | Website + targeted landing pages aligned to offers. | Multi-step qualification (forms, conversational AI, funnels). | Lifecycle stages + segmentation + reporting. | Multi-step nurture sequences tied to customer journey stages. | Automated lifecycle transitions. | Subscriptions, order bumps, automated payment workflows. | Automated lifecycle-based reactivation + Outreach AI. | Automated Reviews AI with follow-up and response workflows. | AI voice/conversational agents driving engagement at scale. | I track lifecycle performance, attribution, and optimize continuously. | Automated retention, renewal, and expansion workflows.",
+  "pathway": "Optimization",
+  "reasoning": "Predicted Optimization from response pattern similarity. 12 Optimization-level (D) responses detected. No critical Foundation blockers. Strong CRM and reporting maturity confirmed.",
+  "confidence_score": 0.99994041,
+  "class_probabilities": {
+    "Foundation": 1e-06,
+    "Growth": 5.9e-05,
+    "Optimization": 0.99994
+  },
+  "summary": {
+    "source": "deterministic_fallback",
+    "intro": "Hi Sarah,\nBased on your answers, your core systems are working well, which means the focus now shifts to deepening and automating what you've already built. 12 Optimization-level (D) responses detected. No critical Foundation blockers. Here's what your results show.",
+    "narrative_paragraph_1": "Your priority systems are already performing well. Your reactivation system is running at a level where your existing database is continuously being worked, not just occasionally touched. The opportunity now is tightening consistency across the remaining areas.",
+    "narrative_paragraph_2": "Where your systems are already solid — particularly in Reactivation & Outreach System and Reputation & Reviews System — that foundation is working for you. Your reactivation system is running at a level where your existing database is continuously being worked, not just occasionally touched. As the remaining gaps close, the business becomes easier to run and more reliable to grow.",
+    "recommended_focus_areas": [
+      "Reactivation & Outreach System: structured campaigns that re-engage your existing database.",
+      "Reputation & Reviews System: a consistent process that generates client reviews automatically.",
+      "AI Engagement & Conversion System: AI tools integrated into your qualification and follow-up.",
+      "Reporting & Improvement System: regular metrics review so you know what is actually working.",
+      "Lifetime Value & Retention System: planned offers and reminders that keep clients returning."
+    ],
+    "strongest_area": "Reputation & Reviews System",
+    "weakest_area": "Clarity & Offer System",
+    "immediate_focus": "Reactivation & Outreach System",
+    "graduation_outlook": "You are operating at the highest maturity level. The focus now is compounding what's already working — expanding AI capabilities, deepening lifecycle intelligence, and building the retention and expansion infrastructure that turns client relationships into long-term, compounding revenue.",
+    "full_report_text": "Hi Sarah,\nBased on your answers, your core systems are working well, which means the focus now shifts to deepening and automating what you've already built. 12 Optimization-level (D) responses detected. No critical Foundation blockers. Here's what your results show.\n\nYour priority systems are already performing well. Your reactivation system is running at a level where your existing database is continuously being worked, not just occasionally touched. The opportunity now is tightening consistency across the remaining areas.\n\nWhere your systems are already solid — particularly in Reactivation & Outreach System and Reputation & Reviews System — that foundation is working for you. Your reactivation system is running at a level where your existing database is continuously being worked, not just occasionally touched. As the remaining gaps close, the business becomes easier to run and more reliable to grow.\n\nYour recommended focus areas:\n- Reactivation & Outreach System: structured campaigns that re-engage your existing database.\n- Reputation & Reviews System: a consistent process that generates client reviews automatically.\n- AI Engagement & Conversion System: AI tools integrated into your qualification and follow-up.\n- Reporting & Improvement System: regular metrics review so you know what is actually working.\n- Lifetime Value & Retention System: planned offers and reminders that keep clients returning.\n\nYou are operating at the highest maturity level. The focus now is compounding what's already working — expanding AI capabilities, deepening lifecycle intelligence, and building the retention and expansion infrastructure that turns client relationships into long-term, compounding revenue."
+  },
+  "priority_actions": [
+    "Integrate AI tools into your qualification, follow-up, and engagement workflows.",
+    "Build lifecycle-based reactivation sequences that trigger from contact behaviour.",
+    "Implement full lifecycle tracking and attribution to understand every conversion driver.",
+    "Develop automated retention and expansion workflows for existing clients.",
+    "Add order bumps, subscription options, and automated upsell sequences to your payment flows."
+  ],
+  "anti_priority_warnings": [
+    "Don't over-automate at the expense of personal touchpoints that drive client loyalty.",
+    "Don't onboard new AI systems without first auditing integration with your existing CRM and workflows.",
+    "Don't expand to new markets before lifecycle tracking shows consistent performance in your current market."
+  ]
+}

@@ -49,6 +49,8 @@ Option B (ZIP):
    - Application URL: `api.yourdomain.com`
    - Application startup file: `passenger_wsgi.py`
    - Application entry point: `application`
+
+   requirements.txt
 4. Click **Create**.
 
 ## 4) Install Dependencies

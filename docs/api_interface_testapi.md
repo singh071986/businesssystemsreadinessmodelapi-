@@ -158,7 +158,24 @@ Example success response:
     "Growth": 0.7823,
     "Optimization": 0.0932
   },
-  "summary": "...",
+  "summary": {
+    "source": "deterministic_fallback",
+    "intro": "{{client_name}}, your results place you in the Growth stage right now. Predicted Growth from response pattern similarity.",
+    "narrative_paragraph_1": "The clearest pressure points right now sit in Presence System, Nurture & Follow-Up System, and Reactivation & Outreach System. Those areas still rely on manual effort or inconsistent execution, which makes the business feel heavier to run than it should.",
+    "narrative_paragraph_2": "Your current strength is most visible in Clarity & Offer System, Lead Capture System, and Customer Journey / CRM System. As the weaker systems catch up, those stronger areas become easier to scale without adding the same level of personal effort.",
+    "recommended_focus_areas": [
+      "Standardise your client onboarding and fulfillment into a documented workflow.",
+      "Connect your payment system to automated confirmation and onboarding sequences.",
+      "Launch a structured reactivation campaign to your existing database.",
+      "Implement a consistent review request process at the close of every client engagement.",
+      "Set up a regular metrics review cadence — weekly or monthly — using a simple dashboard."
+    ],
+    "strongest_area": "Customer Journey / CRM System",
+    "weakest_area": "AI Engagement & Conversion System",
+    "immediate_focus": "Standardise your client onboarding and fulfillment into a documented workflow.",
+    "graduation_outlook": "Once you have standardised delivery, integrated payments, a structured reactivation strategy, and consistent metrics review in place, you'll be ready to move into the Optimization pathway — where your focus shifts to AI-assisted engagement, lifecycle automation, and continuous performance improvement.",
+    "full_report_text": "{{client_name}}, your results place you in the Growth stage right now. Predicted Growth from response pattern similarity.\n\nThe clearest pressure points right now sit in Presence System, Nurture & Follow-Up System, and Reactivation & Outreach System. Those areas still rely on manual effort or inconsistent execution, which makes the business feel heavier to run than it should.\n\nYour current strength is most visible in Clarity & Offer System, Lead Capture System, and Customer Journey / CRM System. As the weaker systems catch up, those stronger areas become easier to scale without adding the same level of personal effort.\n\nYour recommended focus areas:\n- Standardise your client onboarding and fulfillment into a documented workflow.\n- Connect your payment system to automated confirmation and onboarding sequences.\n- Launch a structured reactivation campaign to your existing database.\n- Implement a consistent review request process at the close of every client engagement.\n- Set up a regular metrics review cadence — weekly or monthly — using a simple dashboard.\n\nOnce you have standardised delivery, integrated payments, a structured reactivation strategy, and consistent metrics review in place, you'll be ready to move into the Optimization pathway — where your focus shifts to AI-assisted engagement, lifecycle automation, and continuous performance improvement."
+  },
   "priority_actions": [
     "Standardise your client onboarding and fulfillment into a documented workflow.",
     "Connect your payment system to automated confirmation sequences."
@@ -169,6 +186,33 @@ Example success response:
   "graduation_outlook": "Once you have standardised delivery, integrated payments, and consistent metrics review, you'll be ready to move into the Optimization pathway."
 }
 ```
+
+## summary Contract
+
+`summary` is a structured narrative object rendered directly by the UI.
+
+Current source:
+- `deterministic_fallback`
+
+Future source options:
+- `deterministic_fallback`
+- `llm_generated`
+
+Fields:
+- `source`: where the report content came from
+- `intro`: opening paragraph for the report
+- `narrative_paragraph_1`: first main narrative paragraph
+- `narrative_paragraph_2`: second main narrative paragraph
+- `recommended_focus_areas`: ordered list of focus areas for the current pathway
+- `strongest_area`: strongest detected system area
+- `weakest_area`: weakest detected system area
+- `immediate_focus`: highest-priority next focus area
+- `graduation_outlook`: pathway-based graduation statement
+- `full_report_text`: fully assembled fallback report text
+
+UI guidance:
+- Use the full `summary` object when you want richer structured rendering
+- `summary.full_report_text` is suitable for immediate display if the UI does not want to assemble sections itself
 
 ## Application Error Contract
 

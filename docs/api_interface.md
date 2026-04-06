@@ -106,10 +106,22 @@ Success response fields:
 - reasoning
 - confidence_score
 - class_probabilities
-- summary (12 paragraphs total, one per answer, combined total under 1,000 characters)
+- summary (structured object for deterministic fallback and future LLM output)
 - priority_actions
 - anti_priority_warnings
 - graduation_outlook
+
+Summary object fields:
+- source
+- intro
+- narrative_paragraph_1
+- narrative_paragraph_2
+- recommended_focus_areas
+- strongest_area
+- weakest_area
+- immediate_focus
+- graduation_outlook
+- full_report_text
 
 ---
 
@@ -177,6 +189,8 @@ curl -s -X POST http://localhost:8000/predict \
   - `422`: show input validation feedback to user
   - `500`: show retry/support message
 - UI should read `code`, `message`, and optionally `details` from error payload.
+- Use `summary.intro`, `summary.narrative_paragraph_1`, and `summary.narrative_paragraph_2` for structured UI placement.
+- Use `summary.full_report_text` for one-shot report rendering/export.
 
 If model is missing in deployment, run:
 ```bash
@@ -185,6 +199,7 @@ python src/train_model.py
 
 Postman verification after redeploy:
 - `GET http://localhost:8000/health` should return version `1.2.0`
-- `POST /predict` should return `summary` with:
-  - 12 paragraphs
-  - total length under 1,000 characters
+- `POST /predict` should return `summary` object with:
+  - `intro`, `narrative_paragraph_1`, and `narrative_paragraph_2`
+  - `recommended_focus_areas` list populated
+  - `full_report_text` populated
