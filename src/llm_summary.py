@@ -14,7 +14,7 @@ from src.data_utils import ANSWER_EXPLANATIONS, ANSWER_LABELS, QUESTIONS, SECTIO
 ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages"
 DEFAULT_MODEL = "claude-sonnet-4-5"
 DEFAULT_TIMEOUT_SECONDS = 25
-DEFAULT_MAX_TOKENS = 1400
+DEFAULT_MAX_TOKENS = 1000
 
 DEFAULT_SYSTEM_PROMPT = (
     "You are an expert business strategist and narrative writer. "
@@ -109,12 +109,13 @@ def _build_user_prompt(
         "}",
         "",
         "Hard constraints:",
-        "1) intro must be 3-5 sentences and begin with 'Hi <first_name>,' on its own line.",
-        "2) paragraph_1 must describe current friction/strength grounded in source answers.",
-        "3) paragraph_2 must shift toward what becomes possible as systems improve.",
-        "4) recommended_focus_areas must contain 3-5 single-line bullets.",
-        "5) graduation_outlook must be pathway-specific and personalized, not generic template text.",
+        "1) intro must be 2-3 sentences and begin with 'Hi <first_name>,' on its own line.",
+        "2) paragraph_1 must be 2-3 sentences describing current friction/strength grounded in source answers.",
+        "3) paragraph_2 must be 2-3 sentences shifting toward what becomes possible as systems improve.",
+        "4) recommended_focus_areas must contain exactly 3 single-line bullets (each under 12 words).",
+        "5) graduation_outlook must be 1-2 sentences, pathway-specific and personalized.",
         "6) Write in plain English, warm but direct, no model diagnostics or threshold jargon.",
+        "7) Be concise. Total output must not exceed 600 tokens.",
         "",
         f"first_name: {first_name}",
         f"pathway: {pathway}",
