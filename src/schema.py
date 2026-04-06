@@ -72,6 +72,7 @@ class AssessmentInput(BaseModel):
 
     model_config = {"json_schema_extra": {
         "example": {
+            "first_name": "Sarah",
             "responses": {
                 "q1": "C", "q2": "B", "q3": "C", "q4": "C",
                 "q5": "B", "q6": "C", "q7": "C", "q8": "B",

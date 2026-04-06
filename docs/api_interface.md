@@ -67,7 +67,36 @@ Success response (`200`):
 Purpose:
 - Predict pathway for one assessment request.
 
-Request body:
+Request fields:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `first_name` | string | No | Client first name used to personalise the summary. Defaults to "there" if omitted. |
+| `responses` | object | Yes | Object containing q1–q12 answers |
+| `responses.q1`–`responses.q12` | string | Yes | Each must be one of `A`, `B`, `C`, `D` |
+
+Request body (with first_name):
+```json
+{
+  "first_name": "Sarah",
+  "responses": {
+    "q1": "C",
+    "q2": "B",
+    "q3": "C",
+    "q4": "C",
+    "q5": "B",
+    "q6": "C",
+    "q7": "C",
+    "q8": "B",
+    "q9": "C",
+    "q10": "A",
+    "q11": "C",
+    "q12": "B"
+  }
+}
+```
+
+Request body (without first_name — also valid):
 ```json
 {
   "responses": {
@@ -88,16 +117,25 @@ Request body:
 ```
 
 Validation rules (enforced server-side):
-- q1 to q12 are mandatory
+- `first_name` is optional — omit or pass `null`; summary will use "there" as salutation
+- `responses` is mandatory
+- q1 to q12 are all mandatory
 - only q1 to q12 are allowed (no extra keys)
-- each answer must be string and one of A, B, C, D
+- each answer must be a string and one of A, B, C, D
+- keys are normalised to lowercase; values are normalised to uppercase
 
-Success response (`200`):
-- Full `ClassificationOutput` JSON payload.
+HTTP response codes:
 
-Error responses:
-- `422` validation failure
-- `500` model missing / internal processing failure
+| Code | When | Error `code` field |
+|---|---|---|
+| `200` | Prediction succeeded | — |
+| `422` | Any request validation failure — missing field, wrong answer letter, extra key, invalid JSON body, wrong types | `VALIDATION_ERROR` |
+| `500` | Model file not found on server | `MODEL_NOT_FOUND` |
+| `500` | Unexpected internal server error | `INTERNAL_ERROR` |
+| `404` | Route does not exist (e.g. `/unknown`) | FastAPI default (not custom contract) |
+| `405` | Wrong HTTP method (e.g. `GET /predict`) | FastAPI default (not custom contract) |
+
+> Note: `400 Bad Request` is **never returned** by this API. All bad request scenarios (malformed body, missing fields, invalid values) return `422`.
 
 Success response fields:
 - input_responses
@@ -172,6 +210,7 @@ curl -s http://localhost:8000/health
 curl -s -X POST http://localhost:8000/predict \
   -H "Content-Type: application/json" \
   -d '{
+    "first_name": "Sarah",
     "responses": {
       "q1":"C","q2":"B","q3":"C","q4":"C","q5":"B","q6":"C",
       "q7":"C","q8":"B","q9":"C","q10":"A","q11":"C","q12":"B"

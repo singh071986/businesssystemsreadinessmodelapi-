@@ -87,7 +87,37 @@ Response fields:
 Purpose:
 - Predicts the pathway for one assessment submission
 
-Request body:
+Request fields:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `first_name` | string | No | Client first name used to personalise the summary. Defaults to "there" if omitted. |
+| `responses` | object | Yes | Object containing q1–q12 answers |
+| `responses.q1`–`responses.q12` | string | Yes | Each must be one of `A`, `B`, `C`, `D` |
+
+Request body (with first_name):
+
+```json
+{
+  "first_name": "Sarah",
+  "responses": {
+    "q1": "C",
+    "q2": "B",
+    "q3": "C",
+    "q4": "C",
+    "q5": "B",
+    "q6": "C",
+    "q7": "C",
+    "q8": "B",
+    "q9": "C",
+    "q10": "A",
+    "q11": "C",
+    "q12": "B"
+  }
+}
+```
+
+Request body (without first_name — also valid):
 
 ```json
 {
@@ -109,7 +139,8 @@ Request body:
 ```
 
 Validation rules enforced by the application:
-- `responses` must be a JSON object
+- `first_name` is optional — omit or pass `null`; summary will use "there" as salutation
+- `responses` is mandatory
 - `q1` through `q12` are all required
 - No keys other than `q1` through `q12` are allowed
 - Every answer must be a string
@@ -197,6 +228,109 @@ Current source:
 Available source options:
 - `deterministic_fallback`
 - `llm_generated`
+
+---
+
+## Error Contract
+
+All application-level errors use this consistent JSON shape:
+
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "Request validation failed.",
+  "details": [
+    {
+      "loc": ["body", "responses"],
+      "msg": "Value error, Missing required question(s): ['q12']",
+      "type": "value_error"
+    }
+  ]
+}
+```
+
+Fields:
+- `code` — machine-readable error identifier (see table below)
+- `message` — human-readable summary
+- `details` — array of validation detail objects (present for 422), or null/string (for 500)
+
+### HTTP Status Codes
+
+| HTTP Code | When it occurs | `code` field |
+|---|---|---|
+| `200` | Prediction succeeded | — |
+| `422` | Any request validation failure: missing field, wrong answer letter, extra question key, malformed JSON body, wrong value types | `VALIDATION_ERROR` |
+| `500` | Model file not found on server (not trained yet) | `MODEL_NOT_FOUND` |
+| `500` | Unexpected internal server error | `INTERNAL_ERROR` |
+| `404` | Route does not exist (e.g. `/unknown`) | FastAPI default — plain JSON, not custom contract |
+| `405` | Wrong HTTP method on valid route (e.g. `GET /predict`) | FastAPI default — plain JSON, not custom contract |
+
+> **Important:** `400 Bad Request` is **never returned** by this API. All bad request scenarios (malformed body, missing fields, invalid answer values) return `422 Unprocessable Entity`.
+
+### Error Code Reference
+
+| `code` | HTTP | Triggered by |
+|---|---|---|
+| `VALIDATION_ERROR` | `422` | Missing q1–q12, extra keys, invalid answer letter, non-string value, malformed JSON |
+| `MODEL_NOT_FOUND` | `500` | `models/pathway_classifier.pkl` not found on server |
+| `INTERNAL_ERROR` | `500` | Any unexpected exception during classification |
+| `HTTP_ERROR` | varies | Generic fallback for unhandled HTTP exceptions |
+
+### Example: 422 missing question
+
+```bash
+curl -s -X POST https://testapi.businessystem.com/predict \
+  -H "Content-Type: application/json" \
+  -d '{"responses":{"q1":"A","q2":"A"}}'
+```
+
+Response:
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "Request validation failed.",
+  "details": [
+    {
+      "loc": ["body", "responses"],
+      "msg": "Value error, Missing required question(s): ['q10', 'q11', 'q12', 'q3', 'q4', 'q5', 'q6', 'q7', 'q8', 'q9']",
+      "type": "value_error"
+    }
+  ]
+}
+```
+
+### Example: 422 invalid answer letter
+
+```bash
+curl -s -X POST https://testapi.businessystem.com/predict \
+  -H "Content-Type: application/json" \
+  -d '{"first_name":"Sarah","responses":{"q1":"E","q2":"A","q3":"A","q4":"A","q5":"A","q6":"A","q7":"A","q8":"A","q9":"A","q10":"A","q11":"A","q12":"A"}}'
+```
+
+Response:
+```json
+{
+  "code": "VALIDATION_ERROR",
+  "message": "Request validation failed.",
+  "details": [
+    {
+      "loc": ["body", "responses"],
+      "msg": "Value error, Invalid answer(s) {'q1': 'E'}. Each answer must be one of A, B, C, or D.",
+      "type": "value_error"
+    }
+  ]
+}
+```
+
+### UI branching logic
+
+```
+HTTP 200  → render prediction result
+HTTP 422  → show validation feedback to user (read details[].msg)
+HTTP 500  → show retry / support message (do not expose details in prod)
+HTTP 404  → wrong route, check integration
+HTTP 405  → wrong method, check integration
+```
 
 Fields:
 - `source`: where the report content came from
