@@ -239,4 +239,60 @@ Model and label encoder saved to `models/pathway_classifier.pkl` using `joblib`.
 
 ---
 
+## 10. cPanel Deployment Steps (Production)
+
+Use this section as the operational checklist for replacing deployed code on cPanel.
+
+### 10.1 Required cPanel Environment Variables
+
+Set these in cPanel Setup Python App for the deployed application:
+
+| Variable | Required | Example Value | Purpose |
+|---|---|---|---|
+| `CORS_ALLOW_ORIGINS` | Yes | `https://your-ui-domain.com` | Restrict allowed browser origins |
+| `API_EXPOSE_ERROR_DETAILS` | Yes | `false` | Hide internal exception details in production responses |
+| `SUMMARY_SOURCE` | Yes | `llm` | `llm` enables Claude summary generation; `deterministic` disables LLM |
+| `ANTHROPIC_API_KEY` | Yes when `SUMMARY_SOURCE=llm` | `sk-ant-...` | Anthropic API credential |
+| `ANTHROPIC_MODEL` | Yes | `claude-sonnet-4-5` | Claude model name |
+| `ANTHROPIC_MAX_TOKENS` | Yes | `1000` | Max output tokens for summary generation |
+| `ANTHROPIC_TIMEOUT_SECONDS` | Yes | `25` | Request timeout to Anthropic API |
+| `NARRATIVE_PROMPT_DOCX_PATH` | Optional but recommended | `/home/twmpathway/business_api/data/narrative_assembly_prompt_draft3.docx` | External prompt document path |
+
+Notes:
+- Keep `API_EXPOSE_ERROR_DETAILS=false` in production.
+- Do not use `CORS_ALLOW_ORIGINS=*` in production unless intentionally public.
+- Rotate keys immediately if a key is ever exposed.
+
+### 10.2 Deployment Procedure (Replace Existing Server Code)
+
+1. Build a deployment zip from the workspace with runtime files only:
+  - `passenger_wsgi.py`
+  - `requirements.txt`
+  - `src/`
+  - `models/pathway_classifier.pkl`
+  - `data/narrative_assembly_prompt_draft3.docx`
+2. Upload and extract into `/home/twmpathway/business_api`.
+3. In cPanel Setup Python App, run pip install for `requirements.txt`.
+4. Verify all environment variables in Section 10.1 are set.
+5. Restart the Python app (Passenger restart).
+6. Validate:
+  - `GET /health` returns 200 and status `ok`
+  - `POST /predict` returns 200 with JSON payload
+  - `summary.source` is `llm_generated` when `SUMMARY_SOURCE=llm`
+
+### 10.3 Error Code Expectations (Production Contract)
+
+| HTTP | Meaning | Typical Cause |
+|---|---|---|
+| `200` | Success | Valid request and successful prediction |
+| `422` | Validation error | Missing `responses`, missing q1-q12, invalid answer values, malformed JSON |
+| `500` | Server error | Model missing or unexpected runtime exception |
+| `404` | Route not found | Wrong endpoint path |
+| `405` | Method not allowed | Wrong HTTP method on valid path |
+
+Important:
+- This API uses `422` for bad request payloads (validation/body issues), not `400`.
+
+---
+
 *Document prepared for the Business Systems Readiness Assessment Platform — ML Classification Engine (Project 1).*
