@@ -4,7 +4,7 @@
 
 **Two modes of operation**
 - **Deterministic fallback** (current): `source = "deterministic_fallback"`. All fields are assembled in `_build_summary_object()` in `src/classifier.py` using static lookup tables from `src/data_utils.py`.
-- **LLM-generated** (planned): `source = "llm_generated"`. The same fields are populated by an LLM using the narrative assembly prompt in `data/narrative_assembly_prompt_draft3.docx`. No API or UI changes are required when switching.
+- **LLM-generated** (implemented, opt-in): `source = "llm_generated"` when `SUMMARY_SOURCE=llm` and `ANTHROPIC_API_KEY` is configured. The same fields are populated by Claude using the narrative assembly prompt in `data/narrative_assembly_prompt_draft3.docx`. No API or UI changes are required when switching.
 
 ---
 
@@ -17,7 +17,7 @@
 | Value | Meaning |
 |---|---|
 | `"deterministic_fallback"` | Built from static lookup tables. Correct structure, functional narrative. |
-| `"llm_generated"` | (planned) Built by Claude or Gemini using the narrative prompt. |
+| `"llm_generated"` | Built by Claude using the narrative prompt and strict JSON output mapping. |
 
 **Prompt requirement:** Not explicitly named in the prompt, but essential for the UI to know whether it is displaying a machine-assembled or LLM-written report, and for QA tracing.
 
@@ -299,13 +299,14 @@ Your recommended focus areas:    ← Part 2, bulleted list label
 
 ---
 
-## Planned LLM Integration Path
+## Implemented LLM Integration Path
 
-When Claude or Gemini is wired in, `_build_summary_object()` will:
-1. Assemble the 12 section blurbs (one per question based on the user's answer) as the source material.
-2. Pass `first_name`, `pathway`, `reasoning` bullets, and the 12 blurbs to the LLM.
-3. Use the narrative assembly prompt in `data/narrative_assembly_prompt_draft3.docx` as the system prompt.
-4. Map the LLM's three-part output into the same `SummaryObject` fields.
-5. Set `source = "llm_generated"`.
+The classifier now supports Claude generation in a safe opt-in mode:
+1. Build deterministic summary first as a guaranteed fallback.
+2. If `SUMMARY_SOURCE=llm` and `ANTHROPIC_API_KEY` is present, assemble all 12 answer blurbs as source material.
+3. Load system prompt from `data/narrative_assembly_prompt_draft3.docx` (or `NARRATIVE_PROMPT_DOCX_PATH` when provided).
+4. Call Anthropic Messages API and request strict JSON for intro, two narrative paragraphs, focus areas, and graduation outlook.
+5. Validate and map the LLM output to the existing `SummaryObject`, then set `source = "llm_generated"`.
+6. If LLM output is invalid or request fails, automatically return deterministic summary with no API contract change.
 
 No changes to the API contract, schema, or UI are required.

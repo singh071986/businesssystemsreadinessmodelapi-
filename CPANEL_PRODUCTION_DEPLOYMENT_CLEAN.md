@@ -205,12 +205,20 @@ Set these in cPanel Python App environment variables (or equivalent host env):
 
 1. CORS_ALLOW_ORIGINS=https://your-ui-domain.com
 2. API_EXPOSE_ERROR_DETAILS=false
+3. SUMMARY_SOURCE=deterministic
+4. ANTHROPIC_API_KEY=key-fromconsole
+5. ANTHROPIC_MODEL=claude-sonnet-4-5
+6. ANTHROPIC_MAX_TOKENS=1400
+7. ANTHROPIC_TIMEOUT_SECONDS=25
+8. NARRATIVE_PROMPT_DOCX_PATH=/home/twmpathway/business_api/data/narrative_assembly_prompt_draft3.docx
 
 Notes:
 
 1. Do not use CORS_ALLOW_ORIGINS=* in production unless required.
 2. API_EXPOSE_ERROR_DETAILS=false prevents internal exception leakage in API responses.
 3. If debugging a server issue temporarily, set API_EXPOSE_ERROR_DETAILS=true, test, then set back to false.
+4. Keep SUMMARY_SOURCE=deterministic for fallback mode.
+5. Switch SUMMARY_SOURCE=llm only after ANTHROPIC_API_KEY is set and app restart is completed.
 
 ## P) SSL and connectivity operations runbook
 

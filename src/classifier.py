@@ -39,6 +39,7 @@ from src.data_utils import (
 )
 from src.schema import AssessmentInput, ClassificationOutput
 from src.train_model import build_features
+from src.llm_summary import build_llm_summary
 
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "pathway_classifier.pkl"
 
@@ -362,7 +363,21 @@ def classify(responses: Union[dict, str], first_name: str = "there") -> dict:
 
     # Build outputs
     reasoning = _build_reasoning(encoded, pathway)
-    summary = _build_summary_object(clean, encoded, pathway, reasoning, first_name=first_name)
+    deterministic_summary = _build_summary_object(
+        clean,
+        encoded,
+        pathway,
+        reasoning,
+        first_name=first_name,
+    )
+    llm_summary = build_llm_summary(
+        first_name=first_name,
+        pathway=pathway,
+        reasoning=reasoning,
+        encoded=encoded,
+        deterministic_summary=deterministic_summary,
+    )
+    summary = llm_summary or deterministic_summary
     priority_actions = PATHWAY_PRIORITY_ACTIONS[pathway]
     anti_priority_warnings = PATHWAY_ANTI_PRIORITY[pathway]
 

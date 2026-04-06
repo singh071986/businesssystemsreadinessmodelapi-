@@ -194,7 +194,7 @@ Example success response:
 Current source:
 - `deterministic_fallback`
 
-Future source options:
+Available source options:
 - `deterministic_fallback`
 - `llm_generated`
 
