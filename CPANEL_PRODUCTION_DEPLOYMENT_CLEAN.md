@@ -211,3 +211,65 @@ Notes:
 1. Do not use CORS_ALLOW_ORIGINS=* in production unless required.
 2. API_EXPOSE_ERROR_DETAILS=false prevents internal exception leakage in API responses.
 3. If debugging a server issue temporarily, set API_EXPOSE_ERROR_DETAILS=true, test, then set back to false.
+
+## P) SSL and connectivity operations runbook
+
+Use this section for day-to-day certificate and reachability checks.
+
+### 1) How SSL works for UI to API calls
+
+1. The UI calls https://testapi.businessystem.com.
+2. Browser performs TLS handshake with the server.
+3. Server presents certificate for testapi.businessystem.com.
+4. Browser validates hostname, trust chain, and expiry.
+5. If valid, traffic is encrypted and request proceeds.
+
+Important:
+
+1. You do not need manual certificate exchange between UI and API for standard HTTPS.
+2. Manage server certificate on the API domain only.
+3. CORS is separate from SSL and must still be configured.
+
+### 2) Certificate management tasks
+
+1. In cPanel, run AutoSSL for testapi.businessystem.com.
+2. Confirm certificate is issued for exact hostname testapi.businessystem.com.
+3. Confirm auto-renew is active.
+4. Check expiry weekly in SSL/TLS Status.
+
+### 3) Connectivity checks (copy and run)
+
+1. DNS resolution:
+2. dig +short testapi.businessystem.com @1.1.1.1
+3. dig +short testapi.businessystem.com @8.8.8.8
+4. TLS handshake:
+5. curl -Iv https://testapi.businessystem.com/health
+6. Health endpoint:
+7. curl -i https://testapi.businessystem.com/health
+8. Predict endpoint:
+9. curl -i -X POST https://testapi.businessystem.com/predict -H "Content-Type: application/json" -d '{"first_name":"Sarah","responses":{"q1":"C","q2":"B","q3":"C","q4":"C","q5":"B","q6":"C","q7":"C","q8":"B","q9":"C","q10":"A","q11":"C","q12":"B"}}'
+
+Expected:
+
+1. DNS returns cPanel server IP.
+2. curl -Iv shows valid certificate for testapi.businessystem.com.
+3. /health returns HTTP 200 JSON.
+4. /predict returns HTTP 200 JSON.
+
+### 4) Fast failure diagnosis
+
+1. curl: (6) Could not resolve host
+2. DNS is not published or wrong nameserver/record.
+3. curl: (60) SSL certificate problem or hostname mismatch
+4. Certificate does not match testapi.businessystem.com or AutoSSL not complete.
+5. HTML 404/5xx instead of JSON
+6. Domain routing issue in cPanel or request not reaching FastAPI.
+7. JSON 500 with MODEL_NOT_FOUND
+8. models/pathway_classifier.pkl missing on server.
+
+### 5) Operational ownership checklist
+
+1. DNS owner keeps A record pointed to current server IP.
+2. Hosting owner verifies AutoSSL issuance and renewal.
+3. API owner verifies health and predict endpoints after every deploy.
+4. UI owner verifies CORS origin is explicitly allowed and uses HTTPS API URL only.
