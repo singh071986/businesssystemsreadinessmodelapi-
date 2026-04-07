@@ -116,7 +116,14 @@ If missing:
 1. In File Manager, create folder /home/twmpathway/business_api/logs
 2. Create files:
 3. /home/twmpathway/business_api/logs/boot.log
-4. /home/twmpathway/business_api/logs/app.log
+4. /home/twmpathway/business_api/logs/api_debug.log
+
+Useful commands:
+
+```bash
+tail -f /home/twmpathway/business_api/logs/boot.log
+tail -f /home/twmpathway/business_api/logs/api_debug.log
+```
 
 Optional app logging snippets:
 
