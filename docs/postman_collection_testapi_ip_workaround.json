@@ -1,0 +1,384 @@
+{
+  "info": {
+    "name": "Business Systems Readiness API - IP Workaround",
+    "_postman_id": "b7f6df34-b3cc-4aa1-928e-b772f83cc8d2",
+    "description": "Postman collection for testapi.businessystem.com using the temporary IP + Host header workaround while DNS and SSL are not fully production-ready. Use URL https://{{base_ip}}/... and send Host: {{host_header}} on every request. In Postman, disable SSL certificate verification if needed.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_ip",
+      "value": "104.36.228.30"
+    },
+    {
+      "key": "host_header",
+      "value": "testapi.businessystem.com"
+    },
+    {
+      "key": "request_id",
+      "value": "postman-debug-001"
+    }
+  ],
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              }
+            ],
+            "url": {
+              "raw": "https://{{base_ip}}/health",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "description": "Temporary testing workaround. Expected: HTTP 200 JSON with status, service, version."
+          }
+        },
+        {
+          "name": "Swagger UI",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              }
+            ],
+            "url": {
+              "raw": "https://{{base_ip}}/docs",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "docs"
+              ]
+            },
+            "description": "Deployment verification endpoint. Expected: HTTP 200 HTML Swagger UI."
+          }
+        },
+        {
+          "name": "ReDoc",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              }
+            ],
+            "url": {
+              "raw": "https://{{base_ip}}/redoc",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "redoc"
+              ]
+            },
+            "description": "Deployment verification endpoint. Expected: HTTP 200 HTML ReDoc page."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Predict Success",
+      "item": [
+        {
+          "name": "Predict Valid With first_name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Sarah\",\n  \"responses\": {\n    \"q1\": \"C\",\n    \"q2\": \"B\",\n    \"q3\": \"C\",\n    \"q4\": \"C\",\n    \"q5\": \"B\",\n    \"q6\": \"C\",\n    \"q7\": \"C\",\n    \"q8\": \"B\",\n    \"q9\": \"C\",\n    \"q10\": \"A\",\n    \"q11\": \"C\",\n    \"q12\": \"B\"\n  }\n}"
+            },
+            "url": {
+              "raw": "https://{{base_ip}}/predict",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Expected: HTTP 200 JSON classification payload."
+          }
+        },
+        {
+          "name": "Predict Valid Without first_name",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-Request-ID",
+                "value": "{{request_id}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responses\": {\n    \"q1\": \"C\",\n    \"q2\": \"B\",\n    \"q3\": \"C\",\n    \"q4\": \"C\",\n    \"q5\": \"B\",\n    \"q6\": \"C\",\n    \"q7\": \"C\",\n    \"q8\": \"B\",\n    \"q9\": \"C\",\n    \"q10\": \"A\",\n    \"q11\": \"C\",\n    \"q12\": \"B\"\n  }\n}"
+            },
+            "url": {
+              "raw": "https://{{base_ip}}/predict",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Expected: HTTP 200 JSON classification payload. Summary should fall back to 'there' if salutation is needed."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validation 422",
+      "item": [
+        {
+          "name": "Missing Required Question",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responses\": {\n    \"q1\": \"A\",\n    \"q2\": \"A\"\n  }\n}"
+            },
+            "url": {
+              "raw": "https://{{base_ip}}/predict",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Expected: HTTP 422 VALIDATION_ERROR for missing q3-q12."
+          }
+        },
+        {
+          "name": "Invalid Answer Letter",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Sarah\",\n  \"responses\": {\n    \"q1\": \"E\",\n    \"q2\": \"A\",\n    \"q3\": \"A\",\n    \"q4\": \"A\",\n    \"q5\": \"A\",\n    \"q6\": \"A\",\n    \"q7\": \"A\",\n    \"q8\": \"A\",\n    \"q9\": \"A\",\n    \"q10\": \"A\",\n    \"q11\": \"A\",\n    \"q12\": \"A\"\n  }\n}"
+            },
+            "url": {
+              "raw": "https://{{base_ip}}/predict",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Expected: HTTP 422 VALIDATION_ERROR because q1 is not one of A/B/C/D."
+          }
+        },
+        {
+          "name": "Extra Question Key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responses\": {\n    \"q1\": \"A\",\n    \"q2\": \"A\",\n    \"q3\": \"A\",\n    \"q4\": \"A\",\n    \"q5\": \"A\",\n    \"q6\": \"A\",\n    \"q7\": \"A\",\n    \"q8\": \"A\",\n    \"q9\": \"A\",\n    \"q10\": \"A\",\n    \"q11\": \"A\",\n    \"q12\": \"A\",\n    \"q13\": \"A\"\n  }\n}"
+            },
+            "url": {
+              "raw": "https://{{base_ip}}/predict",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Expected: HTTP 422 VALIDATION_ERROR because extra keys beyond q1-q12 are not allowed."
+          }
+        },
+        {
+          "name": "Non-string Answer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responses\": {\n    \"q1\": \"A\",\n    \"q2\": \"A\",\n    \"q3\": \"A\",\n    \"q4\": \"A\",\n    \"q5\": 3,\n    \"q6\": \"A\",\n    \"q7\": \"A\",\n    \"q8\": \"A\",\n    \"q9\": \"A\",\n    \"q10\": \"A\",\n    \"q11\": \"A\",\n    \"q12\": \"A\"\n  }\n}"
+            },
+            "url": {
+              "raw": "https://{{base_ip}}/predict",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Expected: HTTP 422 VALIDATION_ERROR because each answer must be a string."
+          }
+        },
+        {
+          "name": "Malformed JSON Body",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"responses\": {\n    \"q1\": \"C\",\n    \"q2\": \"B\"\n  }"
+            },
+            "url": {
+              "raw": "https://{{base_ip}}/predict",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Expected: HTTP 422 due to malformed JSON body, per interface agreement."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Route and Method Errors",
+      "item": [
+        {
+          "name": "Wrong Method On Predict",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              }
+            ],
+            "url": {
+              "raw": "https://{{base_ip}}/predict",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "predict"
+              ]
+            },
+            "description": "Expected: HTTP 405 FastAPI default response."
+          }
+        },
+        {
+          "name": "Unknown Route",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Host",
+                "value": "{{host_header}}"
+              }
+            ],
+            "url": {
+              "raw": "https://{{base_ip}}/unknown",
+              "protocol": "https",
+              "host": [
+                "{{base_ip}}"
+              ],
+              "path": [
+                "unknown"
+              ]
+            },
+            "description": "Expected: HTTP 404 FastAPI default response."
+          }
+        }
+      ]
+    }
+  ]
+}
