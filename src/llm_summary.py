@@ -1,5 +1,6 @@
 import json
 import os
+import time
 import urllib.error
 import urllib.request
 import xml.etree.ElementTree as ET
@@ -9,6 +10,7 @@ from pathlib import Path
 from typing import Optional
 
 from src.data_utils import ANSWER_EXPLANATIONS, ANSWER_LABELS, QUESTIONS, SECTION_NAMES
+from src.logging_utils import get_app_logger, log_event
 
 
 ANTHROPIC_ENDPOINT = "https://api.anthropic.com/v1/messages"
@@ -21,6 +23,8 @@ DEFAULT_SYSTEM_PROMPT = (
     "Write a three-part report in plain, human language based only on the source material. "
     "Avoid jargon and avoid copying source sentences verbatim."
 )
+
+llm_logger = get_app_logger("business_api.llm_summary")
 
 
 def _is_truthy(value: str) -> bool:
@@ -138,9 +142,14 @@ def _build_user_prompt(
     return "\n".join(lines)
 
 
-def _call_anthropic(system_prompt: str, user_prompt: str) -> Optional[str]:
+def _call_anthropic(
+    system_prompt: str,
+    user_prompt: str,
+    request_id: Optional[str] = None,
+) -> Optional[str]:
     api_key = os.getenv("ANTHROPIC_API_KEY", "").strip()
     if not api_key:
+        log_event(llm_logger, "anthropic_skipped_missing_key", request_id=request_id)
         return None
 
     model = os.getenv("ANTHROPIC_MODEL", DEFAULT_MODEL).strip() or DEFAULT_MODEL
@@ -168,14 +177,38 @@ def _call_anthropic(system_prompt: str, user_prompt: str) -> Optional[str]:
         method="POST",
     )
 
+    started_at = time.perf_counter()
+    log_event(
+        llm_logger,
+        "anthropic_request_started",
+        request_id=request_id,
+        model=model,
+        timeout_seconds=timeout_seconds,
+    )
+
     try:
         with urllib.request.urlopen(req, timeout=timeout_seconds) as resp:
             raw = resp.read().decode("utf-8")
         data = json.loads(raw)
         content = data.get("content", [])
         text_chunks = [item.get("text", "") for item in content if isinstance(item, dict) and item.get("type") == "text"]
+        log_event(
+            llm_logger,
+            "anthropic_request_finished",
+            request_id=request_id,
+            elapsed_ms=round((time.perf_counter() - started_at) * 1000, 2),
+            response_bytes=len(raw),
+        )
         return "\n".join(chunk for chunk in text_chunks if chunk).strip() or None
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError, ValueError):
+    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, json.JSONDecodeError, ValueError) as exc:
+        log_event(
+            llm_logger,
+            "anthropic_request_failed",
+            request_id=request_id,
+            elapsed_ms=round((time.perf_counter() - started_at) * 1000, 2),
+            error_type=type(exc).__name__,
+            error=str(exc),
+        )
         return None
 
 
@@ -185,9 +218,13 @@ def build_llm_summary(
     reasoning: str,
     encoded: dict,
     deterministic_summary: dict,
+    request_id: Optional[str] = None,
 ) -> Optional[dict]:
     if not llm_summary_enabled():
+        log_event(llm_logger, "llm_summary_disabled", request_id=request_id)
         return None
+
+    log_event(llm_logger, "llm_summary_enabled", request_id=request_id, pathway=pathway)
 
     system_prompt = _load_system_prompt()
     user_prompt = _build_user_prompt(
@@ -198,9 +235,14 @@ def build_llm_summary(
         pathway_focus_areas=deterministic_summary.get("recommended_focus_areas", []),
     )
 
-    llm_text = _call_anthropic(system_prompt=system_prompt, user_prompt=user_prompt)
+    llm_text = _call_anthropic(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        request_id=request_id,
+    )
     parsed = _extract_json_object(llm_text or "")
     if not parsed:
+        log_event(llm_logger, "llm_summary_parse_failed", request_id=request_id)
         return None
 
     intro = str(parsed.get("intro", "")).strip()
@@ -210,12 +252,15 @@ def build_llm_summary(
     focus = parsed.get("recommended_focus_areas", [])
 
     if not all([intro, p1, p2, outlook]) or not isinstance(focus, list):
+        log_event(llm_logger, "llm_summary_invalid_payload", request_id=request_id)
         return None
 
     cleaned_focus = [str(item).strip() for item in focus if str(item).strip()]
     if len(cleaned_focus) < 3:
         cleaned_focus = deterministic_summary.get("recommended_focus_areas", [])[:5]
     cleaned_focus = cleaned_focus[:5]
+
+    log_event(llm_logger, "llm_summary_built", request_id=request_id, focus_count=len(cleaned_focus))
 
     focus_lines = "\n".join(f"- {item}" for item in cleaned_focus)
     full_report_text = (

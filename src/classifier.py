@@ -14,8 +14,9 @@ Usage (CLI):
 
 import json
 import sys
+import time
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 import joblib
 import numpy as np
@@ -37,6 +38,7 @@ from src.data_utils import (
     SECTION_NAMES,
     rule_based_classify,
 )
+from src.logging_utils import get_app_logger, log_event
 from src.schema import AssessmentInput, ClassificationOutput
 from src.train_model import build_features
 from src.llm_summary import build_llm_summary
@@ -44,6 +46,7 @@ from src.llm_summary import build_llm_summary
 MODEL_PATH = Path(__file__).resolve().parent.parent / "models" / "pathway_classifier.pkl"
 
 _model_bundle = None  # cached after first load
+classifier_logger = get_app_logger("business_api.classifier")
 
 SHORT_SECTION_NAMES = {
     "q1": "Q1 Offer",
@@ -68,7 +71,7 @@ SUMMARY_TAIL = {
 }
 
 
-def _load_model():
+def _load_model(request_id: Optional[str] = None):
     global _model_bundle
     if _model_bundle is None:
         if not MODEL_PATH.exists():
@@ -76,7 +79,22 @@ def _load_model():
                 f"Model file not found at {MODEL_PATH}. "
                 "Run `python src/train_model.py` first to train and save the model."
             )
+        started_at = time.perf_counter()
         _model_bundle = joblib.load(MODEL_PATH)
+        log_event(
+            classifier_logger,
+            "model_loaded",
+            request_id=request_id,
+            model_path=str(MODEL_PATH),
+            elapsed_ms=round((time.perf_counter() - started_at) * 1000, 2),
+        )
+    else:
+        log_event(
+            classifier_logger,
+            "model_cache_hit",
+            request_id=request_id,
+            model_path=str(MODEL_PATH),
+        )
     return _model_bundle
 
 
@@ -357,7 +375,11 @@ def _build_reasoning(encoded: dict, pathway: str) -> str:
 # Main classification function
 # ---------------------------------------------------------------------------
 
-def classify(responses: Union[dict, str], first_name: str = "there") -> dict:
+def classify(
+    responses: Union[dict, str],
+    first_name: str = "there",
+    request_id: Optional[str] = None,
+) -> dict:
     """
     Classify a 12-question business systems assessment.
 
@@ -372,89 +394,117 @@ def classify(responses: Union[dict, str], first_name: str = "there") -> dict:
         ValueError: if input validation fails.
         FileNotFoundError: if the model hasn't been trained yet.
     """
-    # Accept raw JSON string
-    if isinstance(responses, str):
-        try:
-            responses = json.loads(responses)
-        except json.JSONDecodeError as exc:
-            raise ValueError(f"Invalid JSON input: {exc}") from exc
+    started_at = time.perf_counter()
+    try:
+        log_event(
+            classifier_logger,
+            "classify_started",
+            request_id=request_id,
+            input_type=type(responses).__name__,
+        )
 
-    # If the dict has a "responses" wrapper, unwrap it
-    if "responses" in responses and isinstance(responses["responses"], dict):
-        responses = responses["responses"]
+        # Accept raw JSON string
+        if isinstance(responses, str):
+            try:
+                responses = json.loads(responses)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"Invalid JSON input: {exc}") from exc
 
-    # Validate via Pydantic
-    validated = AssessmentInput(responses=responses)
-    clean = validated.responses  # normalised: lowercase keys, uppercase values
+        # If the dict has a "responses" wrapper, unwrap it
+        if "responses" in responses and isinstance(responses["responses"], dict):
+            responses = responses["responses"]
 
-    # Encode to integers
-    encoded = {q: ANSWER_ENCODING[clean[q]] for q in QUESTIONS}
+        # Validate via Pydantic
+        validated = AssessmentInput(responses=responses)
+        clean = validated.responses  # normalised: lowercase keys, uppercase values
 
-    # Build feature vector
-    features = np.array(build_features(encoded), dtype=float).reshape(1, -1)
+        # Encode to integers
+        encoded = {q: ANSWER_ENCODING[clean[q]] for q in QUESTIONS}
 
-    # Load model and predict
-    bundle = _load_model()
-    model = bundle["model"]
-    scaler = bundle["scaler"]
-    encoding_pathway = bundle["encoding_pathway"]
+        # Build feature vector
+        features = np.array(build_features(encoded), dtype=float).reshape(1, -1)
 
-    features_scaled = scaler.transform(features)
-    pred_idx = int(model.predict(features_scaled)[0])
-    proba = model.predict_proba(features_scaled)[0]  # [Foundation, Growth, Optimization]
+        # Load model and predict
+        bundle = _load_model(request_id=request_id)
+        model = bundle["model"]
+        scaler = bundle["scaler"]
+        encoding_pathway = bundle["encoding_pathway"]
 
-    pathway = encoding_pathway[pred_idx]
-    confidence_score = float(proba[pred_idx])
+        features_scaled = scaler.transform(features)
+        pred_idx = int(model.predict(features_scaled)[0])
+        proba = model.predict_proba(features_scaled)[0]  # [Foundation, Growth, Optimization]
 
-    class_probabilities = {
-        encoding_pathway[i]: round(float(proba[i]), 6)
-        for i in range(len(proba))
-    }
+        pathway = encoding_pathway[pred_idx]
+        confidence_score = float(proba[pred_idx])
 
-    # Cross-check with deterministic rule classifier
-    rule_pathway = rule_based_classify(encoded)
-    if rule_pathway != pathway:
-        # Trust the deterministic rule for clear-cut cases
-        pathway = rule_pathway
-        rule_idx = {"Foundation": 0, "Growth": 1, "Optimization": 2}[rule_pathway]
-        confidence_score = float(proba[rule_idx])
+        class_probabilities = {
+            encoding_pathway[i]: round(float(proba[i]), 6)
+            for i in range(len(proba))
+        }
 
-    # Build input_text
-    input_text = " | ".join(ANSWER_LABELS[q][encoded[q]] for q in QUESTIONS)
+        # Cross-check with deterministic rule classifier
+        rule_pathway = rule_based_classify(encoded)
+        if rule_pathway != pathway:
+            # Trust the deterministic rule for clear-cut cases
+            pathway = rule_pathway
+            rule_idx = {"Foundation": 0, "Growth": 1, "Optimization": 2}[rule_pathway]
+            confidence_score = float(proba[rule_idx])
 
-    # Build outputs
-    reasoning = _build_reasoning(encoded, pathway)
-    deterministic_summary = _build_summary_object(
-        clean,
-        encoded,
-        pathway,
-        reasoning,
-        first_name=first_name,
-    )
-    llm_summary = build_llm_summary(
-        first_name=first_name,
-        pathway=pathway,
-        reasoning=reasoning,
-        encoded=encoded,
-        deterministic_summary=deterministic_summary,
-    )
-    summary = llm_summary or deterministic_summary
-    priority_actions = PATHWAY_PRIORITY_ACTIONS[pathway]
-    anti_priority_warnings = PATHWAY_ANTI_PRIORITY[pathway]
+        # Build input_text
+        input_text = " | ".join(ANSWER_LABELS[q][encoded[q]] for q in QUESTIONS)
 
-    output = ClassificationOutput(
-        input_responses=clean,
-        input_text=input_text,
-        pathway=pathway,
-        reasoning=reasoning,
-        confidence_score=round(confidence_score, 8),
-        class_probabilities=class_probabilities,
-        summary=summary,
-        priority_actions=priority_actions,
-        anti_priority_warnings=anti_priority_warnings,
-    )
+        # Build outputs
+        reasoning = _build_reasoning(encoded, pathway)
+        deterministic_summary = _build_summary_object(
+            clean,
+            encoded,
+            pathway,
+            reasoning,
+            first_name=first_name,
+        )
+        llm_summary = build_llm_summary(
+            first_name=first_name,
+            pathway=pathway,
+            reasoning=reasoning,
+            encoded=encoded,
+            deterministic_summary=deterministic_summary,
+            request_id=request_id,
+        )
+        summary = llm_summary or deterministic_summary
+        priority_actions = PATHWAY_PRIORITY_ACTIONS[pathway]
+        anti_priority_warnings = PATHWAY_ANTI_PRIORITY[pathway]
 
-    return output.model_dump()
+        output = ClassificationOutput(
+            input_responses=clean,
+            input_text=input_text,
+            pathway=pathway,
+            reasoning=reasoning,
+            confidence_score=round(confidence_score, 8),
+            class_probabilities=class_probabilities,
+            summary=summary,
+            priority_actions=priority_actions,
+            anti_priority_warnings=anti_priority_warnings,
+        )
+
+        log_event(
+            classifier_logger,
+            "classify_finished",
+            request_id=request_id,
+            pathway=pathway,
+            confidence_score=round(confidence_score, 8),
+            elapsed_ms=round((time.perf_counter() - started_at) * 1000, 2),
+        )
+        return output.model_dump()
+    except Exception as exc:
+        log_event(
+            classifier_logger,
+            "classify_failed",
+            request_id=request_id,
+            error_type=type(exc).__name__,
+            error=str(exc),
+            elapsed_ms=round((time.perf_counter() - started_at) * 1000, 2),
+        )
+        raise
 
 
 # ---------------------------------------------------------------------------
