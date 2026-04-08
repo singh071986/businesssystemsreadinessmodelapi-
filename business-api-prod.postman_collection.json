@@ -1,0 +1,103 @@
+{
+  "info": {
+    "name": "Business API - Final Production Tests",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "business-api-prod-2026"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "https://business-api.thewebsitemembership.com/health",
+          "protocol": "https",
+          "host": ["business-api.thewebsitemembership.com"],
+          "path": ["health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Predict - Valid (with first_name)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Sarah\",\n  \"responses\": {\n    \"q1\": \"C\",\n    \"q2\": \"B\",\n    \"q3\": \"C\",\n    \"q4\": \"C\",\n    \"q5\": \"B\",\n    \"q6\": \"C\",\n    \"q7\": \"C\",\n    \"q8\": \"B\",\n    \"q9\": \"C\",\n    \"q10\": \"A\",\n    \"q11\": \"C\",\n    \"q12\": \"B\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://business-api.thewebsitemembership.com/predict",
+          "protocol": "https",
+          "host": ["business-api.thewebsitemembership.com"],
+          "path": ["predict"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Predict - Valid (no first_name)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"responses\": {\n    \"q1\": \"C\",\n    \"q2\": \"B\",\n    \"q3\": \"C\",\n    \"q4\": \"C\",\n    \"q5\": \"B\",\n    \"q6\": \"C\",\n    \"q7\": \"C\",\n    \"q8\": \"B\",\n    \"q9\": \"C\",\n    \"q10\": \"A\",\n    \"q11\": \"C\",\n    \"q12\": \"B\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://business-api.thewebsitemembership.com/predict",
+          "protocol": "https",
+          "host": ["business-api.thewebsitemembership.com"],
+          "path": ["predict"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Predict - Missing Question (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"responses\": {\n    \"q1\": \"A\",\n    \"q2\": \"A\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://business-api.thewebsitemembership.com/predict",
+          "protocol": "https",
+          "host": ["business-api.thewebsitemembership.com"],
+          "path": ["predict"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Predict - Invalid Answer Letter (422)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"first_name\": \"Sarah\",\n  \"responses\": {\n    \"q1\": \"E\",\n    \"q2\": \"A\",\n    \"q3\": \"A\",\n    \"q4\": \"A\",\n    \"q5\": \"A\",\n    \"q6\": \"A\",\n    \"q7\": \"A\",\n    \"q8\": \"A\",\n    \"q9\": \"A\",\n    \"q10\": \"A\",\n    \"q11\": \"A\",\n    \"q12\": \"A\"\n  }\n}"
+        },
+        "url": {
+          "raw": "https://business-api.thewebsitemembership.com/predict",
+          "protocol": "https",
+          "host": ["business-api.thewebsitemembership.com"],
+          "path": ["predict"]
+        }
+      },
+      "response": []
+    }
+  ]
+}

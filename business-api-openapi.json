@@ -1,0 +1,356 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Business Systems Readiness API",
+    "description": "API interface for pathway classification using the saved logistic regression model. Single-prediction only, with strict input validation, consistent error contract, and UI-ready JSON responses.",
+    "version": "1.2.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health Check",
+        "operationId": "health_check_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/predict": {
+      "post": {
+        "tags": [
+          "Classification"
+        ],
+        "summary": "Predict",
+        "description": "Predict pathway for a single assessment payload.",
+        "operationId": "predict_predict_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AssessmentInput"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClassificationOutput"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server/model error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ApiError": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ApiError"
+      },
+      "AssessmentInput": {
+        "properties": {
+          "first_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "First Name"
+          },
+          "responses": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Responses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "responses"
+        ],
+        "title": "AssessmentInput",
+        "description": "Input payload: 12 question responses (Q1\u2013Q12), each answered A, B, C, or D.\nOptionally include first_name for a personalised summary salutation.",
+        "example": {
+          "first_name": "Sarah",
+          "responses": {
+            "q1": "C",
+            "q10": "A",
+            "q11": "C",
+            "q12": "B",
+            "q2": "B",
+            "q3": "C",
+            "q4": "C",
+            "q5": "B",
+            "q6": "C",
+            "q7": "C",
+            "q8": "B",
+            "q9": "C"
+          }
+        }
+      },
+      "ClassificationOutput": {
+        "properties": {
+          "input_responses": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "type": "object",
+            "title": "Input Responses"
+          },
+          "input_text": {
+            "type": "string",
+            "title": "Input Text"
+          },
+          "pathway": {
+            "type": "string",
+            "title": "Pathway"
+          },
+          "reasoning": {
+            "type": "string",
+            "title": "Reasoning"
+          },
+          "confidence_score": {
+            "type": "number",
+            "title": "Confidence Score"
+          },
+          "class_probabilities": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "type": "object",
+            "title": "Class Probabilities"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/SummaryObject"
+          },
+          "priority_actions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Priority Actions"
+          },
+          "anti_priority_warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Anti Priority Warnings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "input_responses",
+          "input_text",
+          "pathway",
+          "reasoning",
+          "confidence_score",
+          "class_probabilities",
+          "summary",
+          "priority_actions",
+          "anti_priority_warnings"
+        ],
+        "title": "ClassificationOutput",
+        "description": "Full classification result returned by the engine.",
+        "example": {
+          "anti_priority_warnings": [
+            "Don't invest heavily in AI tools until your CRM is consistently used."
+          ],
+          "class_probabilities": {
+            "Foundation": 0.1245,
+            "Growth": 0.7823,
+            "Optimization": 0.0932
+          },
+          "confidence_score": 0.7823,
+          "input_responses": {
+            "q1": "C",
+            "q10": "A",
+            "q11": "C",
+            "q12": "B",
+            "q2": "B",
+            "q3": "C",
+            "q4": "C",
+            "q5": "B",
+            "q6": "C",
+            "q7": "C",
+            "q8": "B",
+            "q9": "C"
+          },
+          "input_text": "I have one clear primary offer and CTA. | Basic website with limited conversion structure. | ...",
+          "pathway": "Growth",
+          "priority_actions": [
+            "Standardise your client onboarding and fulfillment into a documented workflow.",
+            "Connect your payment system to automated confirmation sequences."
+          ],
+          "reasoning": "Predicted Growth: 1 foundation signal detected, 0 optimization signals. No critical Foundation blockers present.",
+          "summary": {
+            "full_report_text": "{{client_name}}, your results place you in the Growth stage right now.\n\nYour strongest progress shows up in the areas where structure already exists, but some core workflows still depend on manual effort.\n\nAs those gaps are standardised, the business becomes easier to run, easier to forecast, and easier to grow without extra strain.\n\nYour recommended focus areas:\n- Standardise your client onboarding and fulfillment into a documented workflow.\n- Connect your payment system to automated confirmation sequences.\n\nOnce you have standardised delivery, integrated payments, and consistent metrics review, you'll be ready to move into the Optimization pathway.",
+            "graduation_outlook": "Once you have standardised delivery, integrated payments, and consistent metrics review, you'll be ready to move into the Optimization pathway.",
+            "immediate_focus": "Standardise your client onboarding and fulfillment into a documented workflow.",
+            "intro": "{{client_name}}, your results place you in the Growth stage right now. The core systems are taking shape, but consistency is still the main constraint.",
+            "narrative_paragraph_1": "Your strongest progress shows up in the areas where structure already exists, but some core workflows still depend on manual effort.",
+            "narrative_paragraph_2": "As those gaps are standardised, the business becomes easier to run, easier to forecast, and easier to grow without extra strain.",
+            "recommended_focus_areas": [
+              "Standardise your client onboarding and fulfillment into a documented workflow.",
+              "Connect your payment system to automated confirmation sequences."
+            ],
+            "source": "deterministic_fallback",
+            "strongest_area": "Clarity & Offer System",
+            "weakest_area": "Nurture & Follow-Up System"
+          }
+        }
+      },
+      "HealthResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status",
+          "service",
+          "version"
+        ],
+        "title": "HealthResponse"
+      },
+      "SummaryObject": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "intro": {
+            "type": "string",
+            "title": "Intro"
+          },
+          "narrative_paragraph_1": {
+            "type": "string",
+            "title": "Narrative Paragraph 1"
+          },
+          "narrative_paragraph_2": {
+            "type": "string",
+            "title": "Narrative Paragraph 2"
+          },
+          "recommended_focus_areas": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recommended Focus Areas"
+          },
+          "strongest_area": {
+            "type": "string",
+            "title": "Strongest Area"
+          },
+          "weakest_area": {
+            "type": "string",
+            "title": "Weakest Area"
+          },
+          "immediate_focus": {
+            "type": "string",
+            "title": "Immediate Focus"
+          },
+          "graduation_outlook": {
+            "type": "string",
+            "title": "Graduation Outlook"
+          },
+          "full_report_text": {
+            "type": "string",
+            "title": "Full Report Text"
+          }
+        },
+        "type": "object",
+        "required": [
+          "source",
+          "intro",
+          "narrative_paragraph_1",
+          "narrative_paragraph_2",
+          "recommended_focus_areas",
+          "strongest_area",
+          "weakest_area",
+          "immediate_focus",
+          "graduation_outlook",
+          "full_report_text"
+        ],
+        "title": "SummaryObject",
+        "description": "Structured fallback summary that can be rendered by the UI."
+      }
+    }
+  }
+}
