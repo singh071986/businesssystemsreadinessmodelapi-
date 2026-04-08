@@ -1,8 +1,8 @@
-# API Interface Agreement (testapi.businessystem.com)
+# API Interface Agreement (business-api.thewebsitemembership.com)
 
 ## Purpose
 
-This document defines the published API contract for the Business Systems Readiness service deployed for testing at `testapi.businessystem.com`.
+This document defines the published API contract for the Business Systems Readiness service deployed at `business-api.thewebsitemembership.com`.
 
 The service is a FastAPI application that serves pathway predictions using the saved model file at `models/pathway_classifier.pkl`.
 
@@ -17,14 +17,14 @@ Compatibility:
 
 ## Base URLs
 
-Primary deployed test URL:
-- `https://testapi.businessystem.com`
+Production URL:
+- `https://business-api.thewebsitemembership.com`
 
-Primary deployed endpoints:
-- Health: `https://testapi.businessystem.com/health`
-- Predict: `https://testapi.businessystem.com/predict`
-- Swagger UI: `https://testapi.businessystem.com/docs`
-- ReDoc: `https://testapi.businessystem.com/redoc`
+Production endpoints:
+- Health: `https://business-api.thewebsitemembership.com/health`
+- Predict: `https://business-api.thewebsitemembership.com/predict`
+- Swagger UI: `https://business-api.thewebsitemembership.com/docs`
+- ReDoc: `https://business-api.thewebsitemembership.com/redoc`
 
 Local development URL:
 - `http://localhost:8000`
@@ -279,7 +279,7 @@ Fields:
 ### Example: 422 missing question
 
 ```bash
-curl -s -X POST https://testapi.businessystem.com/predict \
+curl -s -X POST https://business-api.thewebsitemembership.com/predict \
   -H "Content-Type: application/json" \
   -d '{"responses":{"q1":"A","q2":"A"}}'
 ```
@@ -302,7 +302,7 @@ Response:
 ### Example: 422 invalid answer letter
 
 ```bash
-curl -s -X POST https://testapi.businessystem.com/predict \
+curl -s -X POST https://business-api.thewebsitemembership.com/predict \
   -H "Content-Type: application/json" \
   -d '{"first_name":"Sarah","responses":{"q1":"E","q2":"A","q3":"A","q4":"A","q5":"A","q6":"A","q7":"A","q8":"A","q9":"A","q10":"A","q11":"A","q12":"A"}}'
 ```
@@ -449,13 +449,13 @@ Non-application cases to handle separately:
 ### Deployed health check
 
 ```bash
-curl -i https://testapi.businessystem.com/health
+curl -i https://business-api.thewebsitemembership.com/health
 ```
 
 ### Deployed prediction request
 
 ```bash
-curl -i -X POST https://testapi.businessystem.com/predict \
+curl -i -X POST https://business-api.thewebsitemembership.com/predict \
   -H "Content-Type: application/json" \
   -d '{
     "responses": {

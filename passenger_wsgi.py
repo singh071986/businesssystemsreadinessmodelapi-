@@ -85,6 +85,20 @@ class _ASGIToWSGI:
             if environ.get(wsgi_key):
                 headers.append((header_name, environ[wsgi_key].encode("latin-1")))
 
+        # Determine scheme: LiteSpeed/Passenger delivers requests internally as
+        # plain HTTP even when the outer connection is HTTPS. Without the correct
+        # scheme in the ASGI scope, FastAPI's built-in redirects (e.g. /docs/
+        # → /docs) will generate http:// URLs, causing redirect loops in browsers
+        # that enforce HTTPS. Read the scheme from the WSGI environ in order of
+        # reliability: wsgi.url_scheme (WSGI standard), HTTP_X_FORWARDED_PROTO
+        # (reverse-proxy header), then HTTPS env var, then fall back to http.
+        _https_env = environ.get("HTTPS", "").lower() in ("on", "1", "yes")
+        _scheme = (
+            environ.get("wsgi.url_scheme")
+            or environ.get("HTTP_X_FORWARDED_PROTO")
+            or ("https" if _https_env else "http")
+        )
+
         scope = {
             "type": "http",
             "asgi": {"version": "3.0", "spec_version": "2.3"},
@@ -94,6 +108,7 @@ class _ASGIToWSGI:
             "path": environ.get("PATH_INFO", "/"),
             "query_string": environ.get("QUERY_STRING", "").encode("latin-1"),
             "root_path": environ.get("SCRIPT_NAME", ""),
+            "scheme": _scheme,
             "server": (
                 environ.get("SERVER_NAME", "localhost"),
                 int(environ.get("SERVER_PORT", 80)),

@@ -12,10 +12,17 @@ Compatibility:
 - Single-prediction interface only.
 - Explicit error contract and CORS support included.
 
-Base URL (local):
+Production URL:
+- https://business-api.thewebsitemembership.com
+
+Local development URL:
 - http://localhost:8000
 
-Interactive docs:
+Interactive docs (production):
+- Swagger UI: https://business-api.thewebsitemembership.com/docs
+- ReDoc: https://business-api.thewebsitemembership.com/redoc
+
+Interactive docs (local):
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
@@ -23,10 +30,17 @@ Interactive docs:
 
 ## Base URLs
 
+Production:
+- https://business-api.thewebsitemembership.com
+
+Production endpoints:
+- Health: https://business-api.thewebsitemembership.com/health
+- Predict: https://business-api.thewebsitemembership.com/predict
+
 Local:
 - http://localhost:8000
 
-Interactive API docs:
+Interactive API docs (local):
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 
@@ -201,13 +215,13 @@ pip install -r requirements.txt
 uvicorn src.api:app --reload --host 0.0.0.0 --port 8000
 ```
 
-3) Test quickly with curl:
+3) Test quickly with curl (production):
 ```bash
-curl -s http://localhost:8000/health
+curl -s https://business-api.thewebsitemembership.com/health
 ```
 
 ```bash
-curl -s -X POST http://localhost:8000/predict \
+curl -s -X POST https://business-api.thewebsitemembership.com/predict \
   -H "Content-Type: application/json" \
   -d '{
     "first_name": "Sarah",
@@ -216,6 +230,11 @@ curl -s -X POST http://localhost:8000/predict \
       "q7":"C","q8":"B","q9":"C","q10":"A","q11":"C","q12":"B"
     }
   }'
+```
+
+Or locally:
+```bash
+curl -s http://localhost:8000/health
 ```
 
 ---
@@ -237,7 +256,7 @@ python src/train_model.py
 ```
 
 Postman verification after redeploy:
-- `GET http://localhost:8000/health` should return version `1.2.0`
+- `GET https://business-api.thewebsitemembership.com/health` should return version `1.2.0`
 - `POST /predict` should return `summary` object with:
   - `intro`, `narrative_paragraph_1`, and `narrative_paragraph_2`
   - `recommended_focus_areas` list populated
