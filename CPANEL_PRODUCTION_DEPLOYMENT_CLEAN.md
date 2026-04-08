@@ -40,9 +40,9 @@ After this, continue with section C.
 
 ## C) Fresh deploy only
 
-Use this if domain already exists and points to /home/twmpathway/business_api.
+Use this if domain already exists and points to /home/twmagency/business_api
 
-1. In File Manager, open /home/twmpathway/business_api.
+1. In File Manager, open /home/twmagency/business_api
 2. Upload project zip.
 3. Extract zip in this same folder.
 4. If extraction creates nested folder, move contents up into /home/twmpathway/business_api.
@@ -288,3 +288,124 @@ Expected:
 2. Hosting owner verifies AutoSSL issuance and renewal.
 3. API owner verifies health and predict endpoints after every deploy.
 4. UI owner verifies CORS origin is explicitly allowed and uses HTTPS API URL only.
+
+## Q) Employer Account Deployment (apipathway.thewebsitemembership.com only)
+
+Use this section when the hostname is owned by employer account and is not visible in your own cPanel account.
+
+### 1) Required ownership and routing facts
+
+1. The hostname is apipathway.thewebsitemembership.com.
+2. The hostname must exist under the same cPanel account where the Python app is created.
+3. If it exists under employer cPanel account, deploy and run Python app in employer account.
+4. Do not split domain ownership in one account and Python app in another account.
+
+### 2) Create or verify domain in employer cPanel
+
+1. Open cPanel in employer account.
+2. Go to Domains.
+3. Ensure apipathway.thewebsitemembership.com exists.
+4. If missing, click Create A New Domain.
+5. Domain: apipathway.thewebsitemembership.com
+6. Share document root: unchecked
+7. Document root: business_api
+8. Save.
+
+### 3) Cloudflare DNS record for this hostname
+
+1. Open Cloudflare DNS for thewebsitemembership.com.
+2. Add or edit record:
+3. Type: A
+4. Name: apipathway
+5. IPv4: 104.36.228.30
+6. TTL: Auto or 300
+7. Proxy status: start with DNS only while debugging, then enable proxy if required.
+
+### 4) Create Python app in employer account
+
+1. Open Setup Python App.
+2. Click Create Application.
+3. Python version: 3.11
+4. Application root: business_api
+5. Application URL: apipathway.thewebsitemembership.com
+6. Startup file: passenger_wsgi.py
+7. Entry point: application
+8. Save.
+
+### 5) Upload project files in employer account
+
+1. Open File Manager path /home/EMPLOYER_USER/business_api
+2. Upload deployment zip.
+3. Extract zip in the same folder.
+4. If nested folder is created, move files up into /home/EMPLOYER_USER/business_api
+5. Ensure these exist in root:
+6. passenger_wsgi.py
+7. requirements.txt
+8. src folder
+9. models folder
+10. data folder
+11. logs folder
+
+### 6) Install dependencies
+
+1. In Setup Python App, add requirements.txt under Configuration files.
+2. Click Run Pip Install.
+3. Wait for success.
+
+### 7) Set environment variables in employer app
+
+1. CORS_ALLOW_ORIGINS=https://your-ui-domain.com
+2. API_EXPOSE_ERROR_DETAILS=false
+3. SUMMARY_SOURCE=llm
+4. ANTHROPIC_API_KEY=your-real-key
+5. ANTHROPIC_MODEL=claude-sonnet-4-5
+6. ANTHROPIC_MAX_TOKENS=1400
+7. ANTHROPIC_TIMEOUT_SECONDS=25
+8. NARRATIVE_PROMPT_DOCX_PATH=/home/twmagency/business_api/data/narrative_assembly_prompt_draft3.docx
+
+Note:
+
+1. Replace EMPLOYER_USER with actual employer cPanel username.
+2. If LLM is not ready yet, set SUMMARY_SOURCE=deterministic temporarily.
+
+### 8) Restart app and issue SSL
+
+1. In Setup Python App, Stop App.
+2. Start or Restart App.
+3. Open SSL/TLS Status.
+4. Select business-api.thewebsitemembership.com.
+5. Run AutoSSL.
+6. Wait until certificate is issued.
+
+### 9) Go-live verification commands
+
+1. dig +short business-api.thewebsitemembership.com @1.1.1.1
+2. dig +short business-api.thewebsitemembership.com @8.8.8.8
+3. curl -Iv https://business-api.thewebsitemembership.com/health
+4. curl -i https://business-api.thewebsitemembership.com/health
+5. curl -i -X POST https://business-api.thewebsitemembership.com/predict -H "Content-Type: application/json" -d '{"responses":{"q1":"C","q2":"B","q3":"C","q4":"C","q5":"B","q6":"C","q7":"C","q8":"B","q9":"C","q10":"A","q11":"C","q12":"B"}}'
+
+Expected:
+
+1. DNS resolves publicly.
+2. SSL is valid and trusted.
+3. health returns HTTP 200 JSON.
+4. predict returns HTTP 200 JSON.
+
+### 10) UI integration cutover
+
+1. Update UI API base URL to https://apipathway.thewebsitemembership.com
+2. Verify browser Network tab shows successful HTTPS call to health and predict.
+3. If browser shows CORS failure, update CORS_ALLOW_ORIGINS and restart app.
+
+### 11) Fast failure map
+
+1. DNS resolves to 172.64.x.x only and endpoint is wrong page:
+2. Cloudflare record exists but origin routing or cPanel vhost mapping is wrong.
+3. Fix domain ownership and Application URL in same employer account.
+4. 404 HTML instead of JSON:
+5. Request is not reaching FastAPI app. Recheck domain mapping and app URL binding.
+6. SSL error in browser:
+7. Run AutoSSL for this hostname and confirm certificate covers apipathway.thewebsitemembership.com.
+8. 422 on predict:
+9. Request body does not match schema; fix payload.
