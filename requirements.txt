@@ -1,3 +1,6 @@
+Flask
+requests
+xhtml2pdf
 scikit-learn==1.6.1
 numpy==1.26.4
 pydantic==2.7.1
