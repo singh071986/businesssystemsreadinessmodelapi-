@@ -1,6 +1,9 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_file, make_response
+from datetime import datetime
 import requests
 import json
+import io
+from xhtml2pdf import pisa
 
 from questions import QUESTIONS
 
@@ -37,7 +40,31 @@ def index():
                 error = f"Non-JSON response: {api_resp.text[:200]}"
         except Exception as e:
             error = str(e)
+    else:
+        # On GET/refresh, always clear result and error
+        result = None
+        error = None
     return render_template('index.html', sample=sample, result=result, error=error, questions=QUESTIONS)
+
+
+# PDF generation route
+@app.route('/download_pdf', methods=['POST'])
+def download_pdf():
+    # Get the result data from the POST request
+    result = request.json.get('result')
+    if not result:
+        return make_response('No result data provided', 400)
+    # Add PDF generation datetime
+    generated_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    client_name = result.get('name', '')
+    # Render the result as HTML using a template
+    html = render_template('pdf_report.html', result=result, generated_at=generated_at, client_name=client_name)
+    pdf = io.BytesIO()
+    pisa_status = pisa.CreatePDF(html, dest=pdf)
+    if pisa_status.err:
+        return make_response('PDF generation failed', 500)
+    pdf.seek(0)
+    return send_file(pdf, mimetype='application/pdf', as_attachment=True, download_name='assessment_report.pdf')
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Business Systems Readiness Assessment Report</title>
+    <style>
+        body { font-family: 'Montserrat', Arial, sans-serif; color: #222; }
+        h1, h2, h3 { color: #2b3a55; }
+        .section-title { font-weight: bold; margin-top: 1.5em; }
+        ul { margin-bottom: 1em; }
+    </style>
+</head>
+<body>
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;">
+                <h1 style="margin-bottom:0;">Business Systems Readiness Assessment</h1>
+                {% if result.pathway %}
+                <span style="margin-left:24px;font-size:1.2rem;color:#2b3a55;font-weight:700;">Pathway: {{ result.pathway }}</span>
+                {% endif %}
+            </div>
+            <div style="text-align:right;">
+                {% if client_name %}
+                <div style="color:#2b3a55;font-size:1.1rem;font-weight:600;">Client: {{ client_name }}</div>
+                {% endif %}
+                {% if generated_at %}
+                <div style="color:#444;font-size:0.95rem;font-weight:400;">Generated: {{ generated_at }}</div>
+                {% endif %}
+            </div>
+        </div>
+        <h2>Your Personalized Business Pathway</h2>
+    <h3>Summary</h3>
+    <p>{{ result.summary.intro }}</p>
+    <p>{{ result.summary.narrative_paragraph_1 }}</p>
+    <p>{{ result.summary.narrative_paragraph_2 }}</p>
+    <h3 class="section-title">Recommended Focus Areas</h3>
+    <ul>
+    {% for focus in result.summary.recommended_focus_areas %}
+        <li>{{ focus }}</li>
+    {% endfor %}
+    </ul>
+    <div style="display:flex;justify-content:space-between;">
+        <div>
+            <h3 class="section-title">Strongest Area</h3>
+            <p>{{ result.summary.strongest_area }}</p>
+        </div>
+        <div>
+            <h3 class="section-title">Weakest Area</h3>
+            <p>{{ result.summary.weakest_area }}</p>
+        </div>
+    </div>
+    <h3 class="section-title">Immediate Focus</h3>
+    <p>{{ result.summary.immediate_focus }}</p>
+    <h3 class="section-title">Graduation Outlook</h3>
+    <p>{{ result.summary.graduation_outlook }}</p>
+</body>
+</html>

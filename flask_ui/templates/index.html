@@ -134,7 +134,71 @@
     </div>
     {% if result and result.summary %}
         <div class="result-box" style="background: linear-gradient(135deg, #e0e7ef 60%, #b3d4fc 100%); border-radius: 18px; box-shadow: 0 4px 32px rgba(44,62,80,0.10);">
-            <h3 style="font-family:'Montserrat',Arial,sans-serif;letter-spacing:1px;">Your Personalized Business Pathway</h3>
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;">
+                    {% if result.pathway %}
+                    <span style="font-size:1.1rem;color:#2b3a55;font-weight:700;">Pathway: {{ result.pathway }}</span>
+                    {% endif %}
+                </div>
+                <form id="pdf-download-form" method="post" action="/download_pdf" style="margin-bottom:0;">
+                    <input type="hidden" name="result_json" id="result_json">
+                    <button type="button" class="btn btn-link p-0" style="margin-left:12px;background:none;border:none;outline:none;box-shadow:none;" onclick="downloadPDF()" title="Download PDF">
+                        <img src="/static/pdf_download.png" alt="Download PDF" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;">
+                    </button>
+                </form>
+            </div>
+            {% if result.name %}
+            <div class="result-section-title">Name: <span style="color:#2b3a55;">{{ result.name }}</span></div>
+            {% endif %}
+                        <!-- Custom Loading Overlay -->
+                        <div id="loading-overlay" style="display:none;position:fixed;z-index:9999;top:0;left:0;width:100vw;height:100vh;background:rgba(246,247,251,0.92);align-items:center;justify-content:center;flex-direction:column;">
+                                <div class="custom-loader">
+                                    <svg width="120" height="120" viewBox="0 0 120 120">
+                                        <g>
+                                            {% for i in range(24) %}
+                                            <rect x="57" y="15" width="6" height="22" rx="3" fill="{% if i < 12 %}#3ed6c5{% else %}#b3d4fc{% endif %}" opacity="{{ 1 - (i/24*0.7) }}" transform="rotate({{ i*15 }} 60 60)"></rect>
+                                            {% endfor %}
+                                        </g>
+                                    </svg>
+                                </div>
+                                <div style="margin-top:1.5rem;font-size:1.25rem;color:#2b3a55;font-weight:600;letter-spacing:0.5px;">Your Personalized Business Pathway in progress...</div>
+                        </div>
+                        <style>
+                        .custom-loader svg { display: block; margin: 0 auto; }
+                        </style>
+            <script>
+            // Show loading overlay on form submit
+            document.querySelector('form[method="post"]')?.addEventListener('submit', function() {
+                document.getElementById('loading-overlay').style.display = 'flex';
+            });
+            </script>
+            <script>
+            function downloadPDF() {
+                // Send the result data as JSON to the PDF endpoint
+                const result = {{ result|tojson }};
+                fetch('/download_pdf', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ result })
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('PDF generation failed');
+                    return response.blob();
+                })
+                .then(blob => {
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'assessment_report.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(err => alert(err.message));
+            }
+            </script>
+            <!-- Removed duplicate heading -->
             <div class="result-section-title">Summary</div>
             <p>{{ result.summary.intro }}</p>
             <p>{{ result.summary.narrative_paragraph_1 }}</p>
@@ -162,7 +226,7 @@
         </div>
     {% endif %}
         <!-- Exact Easy Artisan Websites Footer -->
-        <footer id="colophon" class="site-footer" role="contentinfo" style="background:#fff;border-top:3px solid #e0e4ea;padding:1.5rem 0 1rem 0;text-align:center;margin-top:2rem;">
+        <footer id="colophon" class="site-footer" role="contentinfo" style="background:#fff;border-top:3px solid #e0e4ea;padding:1.5rem 0 1rem 0;text-align:center;margin-top:2rem;position:relative;">
             <div class="site-info" style="font-size:1rem;color:#2b3a55;">
                 <span>&copy; 2026 Easy Artisan Websites, All Rights Reserved</span>
                 <span class="footer-links" style="margin-left:18px;">
@@ -171,6 +235,26 @@
                     <a href="https://easyartisanwebsites.com/cookie-policy/" style="color:#2b3a55;text-decoration:none;">Cookie Policy</a>
                 </span>
             </div>
+            <!-- Back to Top Arrow -->
+            <button id="back-to-top" title="Back to top" style="position:fixed;right:32px;bottom:32px;z-index:10000;background:#3ed6c5;border:none;border-radius:50%;width:48px;height:48px;box-shadow:0 2px 8px rgba(44,62,80,0.10);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.2s;">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            </button>
+            <script>
+            // Show/hide back-to-top button
+            const backToTop = document.getElementById('back-to-top');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 200) {
+                    backToTop.style.display = 'flex';
+                } else {
+                    backToTop.style.display = 'none';
+                }
+            });
+            backToTop.onclick = function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
+            // Hide initially
+            backToTop.style.display = 'none';
+            </script>
         </footer>
 </body>
 </html>
