@@ -107,12 +107,13 @@
                         <p style="font-size:1.15rem;">Discover your business pathway and get a personalized summary to help you grow.</p>
                 </div>
     <!-- Loading Overlay -->
-    <div id="loading-overlay" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.85);z-index:9999;align-items:center;justify-content:center;">
+    <div id="loading-overlay" aria-live="polite" aria-busy="true" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,255,255,0.85);z-index:9999;align-items:center;justify-content:center;">
         <div style="text-align:center;">
-            <div class="spinner-border text-primary" style="width:4rem;height:4rem;" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-            <div style="margin-top:1rem;font-size:1.2rem;color:#2b3a55;font-weight:600;">Loading, please wait...</div>
+            <div id="sprite-spinner" role="status" aria-label="Loading" style="width:180px;height:180px;display:block;margin:0 auto;background:url('/static/spinner_2.gif') 0 0 no-repeat;background-size:3240px 3240px;"></div>
+            <noscript>
+                <img src="/static/spinner_2.gif" alt="Loading..." width="180" height="180" style="margin:0 auto;display:block;" />
+            </noscript>
+            <div style="margin-top:1.5rem;font-size:1.25rem;color:#2b3a55;font-weight:700;">Please wait...<br>We are checking your Personalized Business Pathway...</div>
         </div>
     </div>
     <div class="assessment-form" style="background: linear-gradient(135deg, #f6faff 60%, #e0e7ef 100%); border-radius: 18px; box-shadow: 0 4px 32px rgba(44,62,80,0.10);">
@@ -139,14 +140,47 @@
             <button type="submit" name="clear" value="1" class="btn btn-outline-secondary ms-2">Clear Answers</button>
         </form>
         <script>
-        // Show loading overlay on form submit
-        document.getElementById('assessment-form').addEventListener('submit', function(e) {
-            document.getElementById('loading-overlay').style.display = 'flex';
-        });
-        // Hide overlay on page load (in case of back nav)
-        window.addEventListener('pageshow', function() {
-            document.getElementById('loading-overlay').style.display = 'none';
-        });
+        // Robust sprite animation for spinner_2.gif (18x18 grid, 180x180px per frame, 324 frames)
+        (function() {
+            const spinner = document.getElementById('sprite-spinner');
+            const overlay = document.getElementById('loading-overlay');
+            const frameWidth = 180, frameHeight = 180;
+            const framesPerRow = 18, totalFrames = 324;
+            let frame = 0;
+            let interval = null;
+            function animateSpinner() {
+                if (interval) return; // Prevent multiple intervals
+                interval = setInterval(() => {
+                    const row = Math.floor(frame / framesPerRow);
+                    const col = frame % framesPerRow;
+                    spinner.style.backgroundPosition = `-${col * frameWidth}px -${row * frameHeight}px`;
+                    frame = (frame + 1) % totalFrames;
+                }, 33); // ~30fps
+            }
+            function stopSpinner() {
+                if (interval) {
+                    clearInterval(interval);
+                    interval = null;
+                }
+                frame = 0;
+                spinner.style.backgroundPosition = '0 0';
+            }
+            // Show loading overlay on form submit
+            document.getElementById('assessment-form').addEventListener('submit', function(e) {
+                overlay.style.display = 'flex';
+                animateSpinner();
+            });
+            // Hide overlay and stop spinner on page load (in case of back nav)
+            window.addEventListener('pageshow', function() {
+                overlay.style.display = 'none';
+                stopSpinner();
+            });
+            // Hide overlay and stop spinner if navigation away
+            window.addEventListener('beforeunload', function() {
+                overlay.style.display = 'none';
+                stopSpinner();
+            });
+        })();
         </script>
         {% if error %}
             <div class="alert alert-danger mt-3">{{ error }}</div>
@@ -165,8 +199,8 @@
                         {% if result.pathway %}
                         <span style="font-size:1.1rem;color:#2b3a55;font-weight:700;">Pathway: {{ result.pathway }}</span>
                         {% endif %}
-                        <a id="pdf-download-btn" href="#" title="Download PDF" style="display:inline-block;">
-                            <img src="/static/pdf_download.png" alt="Download PDF" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;">
+                        <a id="pdf-download-btn" href="javascript:void(0);" title="Download PDF" style="display:inline-block;">
+                            <img src="/static/pdfdownload.jpeg" alt="Download PDF" style="width:40px;height:40px;object-fit:contain;vertical-align:middle;">
                         </a>
                         <form method="post" style="display:inline;">
                             <button type="submit" name="clear_report" value="1" class="btn btn-outline-danger btn-sm">Clear Report</button>
@@ -187,7 +221,6 @@
                 })
                 .then(response => {
                     if (!response.ok) throw new Error('PDF generation failed');
-                    // Get filename from content-disposition header
                     const disposition = response.headers.get('content-disposition');
                     let filename = 'assessment_report.pdf';
                     if (disposition && disposition.indexOf('filename=') !== -1) {
@@ -198,12 +231,15 @@
                 .then(({ blob, filename }) => {
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
+                    a.style.display = 'none';
                     a.href = url;
                     a.download = filename;
                     document.body.appendChild(a);
                     a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(url);
+                    setTimeout(() => {
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    }, 100);
                 })
                 .catch(err => alert(err.message));
             });
