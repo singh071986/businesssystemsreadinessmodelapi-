@@ -1,0 +1,54 @@
+PPT PLACEHOLDER: A full-featured PowerPoint (.pptx) cannot be generated directly here, but the following slide outline is recommended for your designer or for use with PowerPoint/Google Slides:
+
+---
+
+# Slide 1: Title
+Business Systems Readiness Assessment
+Project Presentation
+
+# Slide 2: Project Overview
+- Branded, production-grade web app
+- Personalized business pathway & PDF report
+- Easy Artisan Websites branding
+- API integration
+
+# Slide 3: Key Features
+- Responsive UI (Bootstrap)
+- Interactive assessment form
+- API integration for real-time results
+- PDF report download
+- Animated loading spinner
+- Clear/reset answers and report
+
+# Slide 4: Technology Stack
+- Python 3, Flask (backend)
+- HTML, CSS (Bootstrap), JavaScript (frontend)
+- Jinja2 templating
+- xhtml2pdf for PDF generation
+- requests for API calls
+- pytz for timezone handling
+
+# Slide 5: Setup & Deployment
+- Clone repository
+- Create/activate virtual environment
+- Install dependencies
+- Run python app.py
+- Access at http://localhost:5000
+
+# Slide 6: Maintenance & Management
+- Update dependencies via requirements.txt
+- Update branding via static assets/index.html
+- API changes: update API_URL and payload in app.py
+- Edit pdf_report.html for PDF layout
+- Replace spinner_2.gif for spinner updates
+
+# Slide 7: Support & Contact
+For technical or non-technical support:
+- Email: singh071986@gmail.com
+- Cell: +1 437-925-7085
+
+Thank you for your business!
+
+---
+
+You can copy this outline into PowerPoint or Google Slides and apply your branding and visuals as needed.
